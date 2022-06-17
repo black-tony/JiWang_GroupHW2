@@ -18,6 +18,11 @@ using namespace std;
 #define MAX_LINK 1000
 #define TIMEOUT 600
 
+void logger(const string &msg) {
+    fstream log("netdisk.log", ios::out | ios::app);
+    log << "[" << get_time() << "]: " << msg << endl;
+}
+
 int query(MYSQL *(&mysql), MYSQL_RES *(&res), const string &command) {
     if (mysql_query(mysql, command.c_str())) {
         cerr << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
@@ -57,7 +62,6 @@ int register_user(MYSQL *(&mysql), const string &account, const string &passwd) 
     if ((row = mysql_fetch_row(res)) == NULL) {
         // 未查找到结果,即不存在重复用户,可以注册
         command = "insert into user(account,passwd)values(\"" + account + "\",\"" + passwd + "\")";
-        printf("command=%s", command.c_str());
         if (mysql_query(mysql, command.c_str())) {
             cerr << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
             return -1;
@@ -66,7 +70,7 @@ int register_user(MYSQL *(&mysql), const string &account, const string &passwd) 
     else {
         return -1;
     }
-
+    logger("用户" + account + "注册");
     return 0;
 }
 
@@ -101,13 +105,14 @@ int handle_register(char *buf, int size, MYSQL *(&mysql)) {
 int user_login(MYSQL *(&mysql), const string &account, const string &passwd) {
     MYSQL_RES *res;
     MYSQL_ROW row;
-    string command = "select account from user where (account=" + account + ")";
+    string command = "select * from user where (account=" + account + ")";
     query(mysql, res, command);
     if ((row = mysql_fetch_row(res)) != NULL) {
         if (row[1] != passwd) {
             return -1;
         }
         else {
+            logger("用户" + account + "登陆");
             return 0;
         }
     }
@@ -123,7 +128,7 @@ int handle_login(char *buf, int size, MYSQL *(&mysql)) {
     string passwd;
     int i = 0;
     for (; i < size && buf[i] != '\n'; ++i)
-        ;   // event=register
+        ;   // event=login
     for (++i; i < size && buf[i] != '\n'; ++i) {
         account += buf[i];
     }
@@ -154,7 +159,12 @@ int event_parse(char *buf, int size, MYSQL *(&mysql)) {
     if (str.substr(0, 6) == "event=") {
         string event = str.substr(6);
         if (event == "register") {
-            if (handle_register(buf, size, mysql)) {
+            if (handle_register(buf, size, mysql) < 0) {
+                return -1;
+            }
+        }
+        else if (event == "login") {
+            if (handle_login(buf, size, mysql) < 0) {
                 return -1;
             }
         }
@@ -203,22 +213,16 @@ int handle_recv(int client_fd, int epoll_fd, vector<Client> &clients, MYSQL *(&m
     return 0;
 }
 
-void handle(int server_fd, MYSQL *(&mysql), const string &logfile) {
+void handle(int server_fd, MYSQL *(&mysql)) {
     vector<Client> clients;
     int epoll_fd = epoll_create(EPOLL_SIZE);
     add_event(epoll_fd, server_fd, EPOLLIN);
     epoll_event events[MAX_LINK];
-
-    fstream logger(logfile, ios::out);
-    if (!logger.is_open()) {
-        cerr << "failed to open log file: " << logfile << endl;
-        exit(EXIT_FAILURE);
-    }
     int conn_cnt = 0;
 
     while (1) {
         if (conn_cnt >= MAX_LINK) {
-            logger << "[" << get_time() << "]: " << "连接数达到上限" << endl;
+            logger("连接数达到上限");
         }
         int ev_cnt = epoll_wait(epoll_fd, events, MAX_LINK, TIMEOUT);
         for (int i = 0; i < ev_cnt; ++i) {
@@ -249,5 +253,5 @@ int main() {
         return -1;
     }
 
-    handle(server.sfd, mysql, "netdisk.log");
+    handle(server.sfd, mysql);
 }
