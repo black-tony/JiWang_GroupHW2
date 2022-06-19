@@ -1,0 +1,6 @@
+file
+clear_database.sh
+netdisk_server
+.vscode
+netdisk.log
+show_database.sh

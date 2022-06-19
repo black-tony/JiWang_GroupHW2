@@ -10,9 +10,16 @@
 #include <fcntl.h>
 #include "tools.h"
 #include <sys/epoll.h>
+#include <fstream>
 using namespace std;
 
 #define ERROR -1
+
+void logger(const string &msg) {
+    fstream log("netdisk.log", ios::out | ios::app);
+    log << "[" << get_time() << "]: " << msg << endl;
+    log.close();
+}
 
 int server_init(Server &s, const string &ip, const int port) {
     // ´´½¨¼àÌýÃèÊö·û

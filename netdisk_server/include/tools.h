@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 
+
+void logger(const std::string &msg);
+
 struct Server {
     int sfd;
     std::string ip;
@@ -11,6 +14,7 @@ struct Server {
 struct Client {
     int sfd;
     sockaddr_in addr;
+    std::string account;
 };
 
 int setnonblock(int sockfd, bool nonblock = true);
@@ -21,3 +25,7 @@ void del_event(int epollfd, int fd, int state);
 void mod_event(int epollfd, int fd, int state);
 
 std::string get_time();
+
+#define ACCEPT 0
+#define FAILED 1
+#define COMPLETE 2
