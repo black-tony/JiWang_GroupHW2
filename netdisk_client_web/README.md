@@ -1,2 +1,5 @@
-# ç½‘é¡µç‰ˆClientç«¯
+# ÍøÒ³°æClient¶Ë
 
+windowsÏÂ¿ÉÒÔÔËĞĞ, ĞèÒª°²×°xmapp, ÅäÖÃApache(httpd)
+
+linux¶ËĞèÒªÅäÖÃhttpdºÍphp
