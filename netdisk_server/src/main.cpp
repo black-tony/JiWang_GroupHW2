@@ -15,6 +15,7 @@
 #include "file_manage.h"
 #include <fstream>
 #include <mysql.h>  // mysqlÃÿ”–
+#include "my_daemon.h"
 using namespace std;
 
 #define EPOLL_SIZE 1024
@@ -92,7 +93,8 @@ int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep) {
             ret = FAILED;
         }
     }
-    strcpy(rep, msg.c_str());
+    strcpy(rep, exceptions[ret]);
+    strcat(rep, msg.c_str());
     if(event == "download") {
         memcpy(rep + int(msg.size()), sd, size);
     }
@@ -132,7 +134,7 @@ int handle_recv(int client_fd, int epoll_fd, vector<Client> &clients, MYSQL *(&m
     else {
         char rep[5000];
         memset(rep, 0, sizeof(rep));
-        int excep = event_parse(buf, rn, mysql, clients[i], rep);
+        event_parse(buf, rn, mysql, clients[i], rep);
         send(client_fd, rep, strlen(rep), 0);
     }
     return 0;
@@ -165,6 +167,7 @@ void handle(int server_fd, MYSQL *(&mysql)) {
 }
 
 int main() {
+    my_daemon(1, 1);
     Server server;
     string ip = "192.168.80.230";
     int port = 4000;
