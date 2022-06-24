@@ -184,3 +184,300 @@ int handle_list(char *buf, int rn, MYSQL *(&mysql), const string &account, strin
         return FAILED;
     }
 }
+
+int handle_move(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+    int i = 0;
+    string pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    string command = "select * from storage where type=\"f\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "A file with the same name exists\n";
+        return FAILED;
+    }
+    else {
+        command = "select * from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+        mysql_query(mysql, command.c_str());
+        res = mysql_store_result(mysql);
+        if ((row = mysql_fetch_row(res)) != NULL) {
+            command = "update storage set pdir=\"" + dst + "\" where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+            mysql_query(mysql, command.c_str());
+            msg = "move successfully\n";
+            return ACCEPT;
+        }
+    }
+
+    msg = "move failed\n";
+    return FAILED;
+}
+
+int handle_copy(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+    int i = 0;
+    string pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    string command = "select * from storage where type=\"f\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "A file with the same name exists\n";
+        return FAILED;
+    }
+    else {
+        command = "select * from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+        mysql_query(mysql, command.c_str());
+        res = mysql_store_result(mysql);
+        if ((row = mysql_fetch_row(res)) != NULL) {
+            command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"" + string(row[1]) + "\",\"" + dst + "\",\"" + name + "\",\"" + string(row[4]) + "\")";
+            mysql_query(mysql, command.c_str());
+            msg = "copy successfully\n";
+            return ACCEPT;
+        }
+    }
+
+
+    msg = "copy failed\n";
+    return FAILED;
+}
+
+int handle_remove(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+    int i = 0;
+    string pdir, name;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    string command = "select * from storage where pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        string md5 = row[4];
+        command = "delete from storage where pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+        mysql_query(mysql, command.c_str());
+        command = "select * from storage where md5=\"" + md5 + "\"";
+        mysql_query(mysql, command.c_str());
+        res = mysql_store_result(mysql);
+        if ((row = mysql_fetch_row(res)) == NULL) {
+            command = "delete from file where md5=\"" + md5 + "\"";
+            mysql_query(mysql, command.c_str());
+        }
+    }
+
+    msg = "remove successfully\n";
+    return ACCEPT;
+}
+
+int handle_mkdir(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+    int i = 0;
+    string name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    name = name.substr(5);
+    dst = dst.substr(4);
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    string command = "select * from storage where account=\"" + account + "\" and type=\"d\" and dst=\"" + dst + "\" and name=\"" + name + "\")";
+    mysql_query(mysql, command.c_str());
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "a dir with same name exists\n";
+        return FAILED;
+    }
+
+    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + dst + "\",\"" + name + "\",\"\")";
+    mysql_query(mysql, command.c_str());
+
+    msg = "mkdir successfully\n";
+    return ACCEPT;
+}
+
+int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+    int i = 0;
+    string pdir, name;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    string command = "select * from storage where type=\"d\" and name=\"" + name + "\" and pdir=\"" + pdir +"\" and account=\"" + account + "\"";
+    mysql_query(mysql, command.c_str());
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) == NULL) {
+        msg = "no such dir\n";
+        return FAILED;
+    }
+    else {
+        command = "delete from storage where type=\"d\" and name=\"" + name + "\" and pdir=\"" + pdir +"\" and account=\"" + account + "\"";
+        mysql_query(mysql, command.c_str());
+        command = "delete from storage where pdir=\"" + pdir + name + "/\" and account=\"" + account + "\"";
+        mysql_query(mysql, command.c_str());
+        msg = "rmdir successfully\n";
+        return ACCEPT;
+    }
+}
+
+int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+    int i = 0;
+    string pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    string command = "select * from storage where type=\"d\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "A dir with the same name exists\n";
+        return FAILED;
+    }
+    else {
+        command = "select * from storage where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+        mysql_query(mysql, command.c_str());
+        res = mysql_store_result(mysql);
+        if ((row = mysql_fetch_row(res)) != NULL) {
+            command = "update storage set pdir=\"" + dst + "\" where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+            mysql_query(mysql, command.c_str());
+            command = "update storage set pdir=\"" + dst + name + "/\" where type=\"f\" and pdir=\"" + pdir + name + "/\" and account=\"" + account + "\"";
+            mysql_query(mysql, command.c_str());
+            msg = "mvdir successfully\n";
+            return ACCEPT;
+        }
+    }
+
+    msg = "mvdir failed\n";
+    return FAILED;
+}
+
+int handle_download(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg, char *sd, int &size) {
+    int i = 0;
+    string pdir, name, pos;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pos += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && pos.substr(0, 4) != "pos=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    pdir = pdir.substr(0, 5);
+    name = name.substr(0, 5);
+    pos = pos.substr(0, 4);
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    string command = "select * from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        string md5 = row[4];
+        fstream fin("file/" + md5, ios::in | ios::binary);
+        fin.seekg(stoll(pos), ios::beg);
+        fin.read(sd, 4096);
+        size = fin.gcount();
+        if (size < 4096) {
+            msg = "download completed\n";
+        }
+        else {
+            msg = "downloading\n";
+        }
+        return ACCEPT;
+    }
+    msg = "download error\n";
+    return FAILED;
+}

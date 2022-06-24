@@ -50,5 +50,17 @@ begin可以有也可没有内容,finish没有内容,会在login后标记account,故文件上传每个用户
 发送"event=list\npdir=/"  
 回发"accepted\nf test.txt\n",f/d和名字间有空格
 
+以下没怎么测过
+
+<strong>文件移动</strong>: "event=move\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[移动目标位置,"/"结尾]\n"
+<strong>文件复制</strong>: "event=copy\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[粘贴目标位置,"/"结尾]\n"
+<strong>文件删除</strong>: "event=remove\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\n"
+<strong>文件夹创建</strong>: "event=mkdir\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\n"
+<strong>文件夹删除(含里面内容)</strong>: "event=rmdir\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\n"
+<strong>文件夹移动(含内面内容)</strong>: "event=move\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[移动目标位置,"/"结尾]\n"
+
+<strong>文件下载</strong>: "event=download\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\npos=[文件开始下载位置,即已经下了4096字节,那就发4096,已经下了8192,就发8192]\n"
+成功时回发"accepted\n[简单描述]\n[文件内容,二进制打开]"
+
 ## 日志
 日志名是netdisk.log,属于新建文件夹的水平(啥都不记录)

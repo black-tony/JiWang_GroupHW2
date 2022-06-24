@@ -43,28 +43,60 @@ int connect_mysql(MYSQL*(&mysql), const string &db_name) {
     return 0;
 }
 
-int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, string &msg) {
+int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep) {
     string event;
+    string msg;
+    int ret = FAILED;
+    char sd[5000];
+    int size;
     for (int i = 0; i < rn && buf[i] != '\n'; ++i) {
         event += buf[i];
     }
     if (event.substr(0, 6) == "event=") {
         event = event.substr(6);
         if (event == "register") {
-            return handle_register(buf, rn, mysql, msg);
+            ret = handle_register(buf, rn, mysql, msg);
         }
         else if (event == "login") {
-            return handle_login(buf, rn, mysql, client, msg);
+            ret = handle_login(buf, rn, mysql, client, msg);
         }
         else if (event == "upload") {
-            return handle_upload(buf, rn, client.account ,mysql, msg);
+            ret = handle_upload(buf, rn, client.account ,mysql, msg);
         }
         else if (event == "list") {
-            return handle_list(buf, rn, mysql, client.account, msg);
+            ret = handle_list(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "move") {
+            ret = handle_move(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "copy") {
+            ret = handle_copy(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "remove") {
+            ret = handle_remove(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "mkdir") {
+            ret = handle_mkdir(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "rmdir") {
+            ret = handle_rmdir(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "mvdir") {
+            ret = handle_mvdir(buf, rn, mysql, client.account, msg);
+        }
+        else if (event == "download") {
+            ret = handle_download(buf, rn, mysql, client.account, msg, sd, size);
+        }
+        else {
+            msg = "format error\n";
+            ret = FAILED;
         }
     }
-    msg = "format error\n";
-    return FAILED;
+    strcpy(rep, msg.c_str());
+    if(event == "download") {
+        memcpy(rep + int(msg.size()), sd, size);
+    }
+    return 0;    
 }
 
 int handle_accept(int server_fd, int epoll_fd, vector<Client> &clients) {
@@ -98,12 +130,9 @@ int handle_recv(int client_fd, int epoll_fd, vector<Client> &clients, MYSQL *(&m
         clients.erase(clients.begin() + i);
     }
     else {
-        char rep[100];
+        char rep[5000];
         memset(rep, 0, sizeof(rep));
-        string msg;
-        int excep = event_parse(buf, rn, mysql, clients[i], msg);
-        strcpy(rep, exceptions[excep]);
-        strcat(rep, msg.c_str());
+        int excep = event_parse(buf, rn, mysql, clients[i], rep);
         send(client_fd, rep, strlen(rep), 0);
     }
     return 0;
