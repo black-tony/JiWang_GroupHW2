@@ -71,8 +71,8 @@ class Ui_LoginWin(object):
         self.link = False  # 初始化连接状态为False
         self.working = False  # 初始化工作状态为False
 
-        self.socket_open_tcpc()
-        self.login.clicked.connect(self.on_pushButton_login_clicked1)
+        #self.socket_open_tcpc()
+        #self.login.clicked.connect(self.on_pushButton_login_clicked1)
 
 
 
