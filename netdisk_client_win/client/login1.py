@@ -144,7 +144,7 @@ class Ui_LoginWin(object):
 
 
 
-    def socket_open_tcpc(self):
+    '''def socket_open_tcpc(self):
         """
         软件作为tcp client模式连接到其他tcp server
         :return:
@@ -296,7 +296,7 @@ class Ui_LoginWin(object):
 
     def socket_login_recv(self):
         str = self.s.recv(BUFFSIZE).decode()
-        return str
+        return str'''
 
 
 
