@@ -54,12 +54,17 @@ begin可以有也可没有内容,finish没有内容
 <strong>文件复制</strong>: "event=copy\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[粘贴目标位置,"/"结尾]\n"  
 <strong>文件删除</strong>: "event=remove\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\n"  
 <strong>文件夹创建</strong>: "event=mkdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\n"  
+<strong>文件删除</strong>: "event=remove\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\n"  
 
 以下没怎么测过
 
+<strong>文件移动(强制覆盖)</strong>: "event=moveensure\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[移动目标位置,"/"结尾]\n"  
+<strong>文件复制(强制覆盖)</strong>: "event=copyensure\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[粘贴目标位置,"/"结尾]\n"  
 <strong>文件夹复制</strong>: "event=cpdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[粘贴目标位置,"/"结尾]\n"  
+<strong>文件夹移动(含内面内容)</strong>: "event=mvdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[移动目标位置,"/"结尾]\n"  
+<strong>文件夹复制</strong>: "event=cpdirensure\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[粘贴目标位置,"/"结尾]\n"  
+<strong>文件夹移动(含内面内容)</strong>: "event=mvdirensure\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[移动目标位置,"/"结尾]\n"  
 <strong>文件夹删除(含里面内容)</strong>: "event=rmdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\n"  
-<strong>文件夹移动(含内面内容)</strong>: "event=move\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[移动目标位置,"/"结尾]\n"  
 
 <strong>文件下载</strong>: "event=download\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\npos=[文件开始下载位置,即已经下了4096字节,那就发4096,已经下了8192,就发8192]\n"  
 成功时回发"accepted\n[简单描述]\n[文件内容,二进制打开]"  

@@ -13,3 +13,7 @@ int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_cpdir(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_download(char *buf, int rn, MYSQL *(&mysql), std::string &msg, char *sd, int size);
 int handle_rename(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
+int handle_copyensure(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
+int handle_moveensure(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
+int handle_cpdirensure(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
+int handle_mvdirensure(char *buf, int rn, MYSQL *(&mysql), std::string &msg);

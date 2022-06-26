@@ -220,31 +220,7 @@ int handle_list(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     //}
 }
 
-int handle_move(char *buf, int rn, MYSQL *(&mysql), string &msg) {
-    int i = 0;
-    string account, pdir, name, dst;
-    for (; i < rn && buf[i] != '\n'; ++i)
-        ;   // event=move
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        account += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        pdir += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        name += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        dst += buf[i];
-    }
-    if (pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=" || account.substr(0, 8) != "account=")  {
-        msg = "format error\n";
-        return FAILED;
-    }
-    account = account.substr(8);
-    pdir = pdir.substr(5);
-    name = name.substr(5);
-    dst = dst.substr(4);
+int move(MYSQL *(&mysql), string &msg, const string &account, const string &pdir, const string &name, const string &dst) {
     string command = "select * from storage where type=\"f\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
     mysql_query(mysql, command.c_str());
     MYSQL_RES *res;
@@ -271,31 +247,7 @@ int handle_move(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     return FAILED;
 }
 
-int handle_copy(char *buf, int rn, MYSQL *(&mysql), string &msg) {
-    int i = 0;
-    string account, pdir, name, dst;
-    for (; i < rn && buf[i] != '\n'; ++i)
-        ;
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        account += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        pdir += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        name += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        dst += buf[i];
-    }
-    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
-        msg = "format error\n";
-        return FAILED;
-    }
-    account = account.substr(8);
-    pdir = pdir.substr(5);
-    name = name.substr(5);
-    dst = dst.substr(4);
+int copy(MYSQL *(&mysql), string &msg, const string &account, const string &pdir, const string &name, const string &dst) {
     string command = "select * from storage where type=\"f\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
     mysql_query(mysql, command.c_str());
     MYSQL_RES *res;
@@ -325,6 +277,81 @@ int handle_copy(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     return FAILED;
 }
 
+int remove(MYSQL *(&mysql), string &msg, const string &account, const string &pdir, const string &name) {
+    string command = "select * from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        string md5 = row[4];
+        command = "delete from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+        mysql_query(mysql, command.c_str());
+        // 减小计数
+        update_link_count(mysql, md5, -1);
+    }
+
+    msg = "remove successfully\n";
+    logger("用户"+account+"删除文件"+pdir+name);
+    return ACCEPT;
+}
+
+int handle_move(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=" || account.substr(0, 8) != "account=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    return move(mysql, msg, account, pdir, name, dst);
+}
+
+int handle_copy(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    return copy(mysql, msg, account, pdir, name, dst);
+}
+
 int handle_remove(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
     string account, pdir, name;
@@ -346,22 +373,7 @@ int handle_remove(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     account = account.substr(8);
     pdir = pdir.substr(5);
     name = name.substr(5);
-    string command = "select * from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
-    mysql_query(mysql, command.c_str());
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    res = mysql_store_result(mysql);
-    if ((row = mysql_fetch_row(res)) != NULL) {
-        string md5 = row[4];
-        command = "delete from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
-        mysql_query(mysql, command.c_str());
-        // 减小计数
-        update_link_count(mysql, md5, -1);
-    }
-
-    msg = "remove successfully\n";
-    logger("用户"+account+"删除文件"+pdir+name);
-    return ACCEPT;
+    return remove(mysql, msg, account, pdir, name);
 }
 
 int handle_mkdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
@@ -403,28 +415,7 @@ int handle_mkdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     return ACCEPT;
 }
 
-int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
-    int i = 0;
-    string account, pdir, name;
-    for (; i < rn && buf[i] != '\n'; ++i) {
-        ;
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        account += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        pdir += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        name += buf[i];
-    }
-    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=")  {
-        msg = "format error\n";
-        return FAILED;
-    }
-    account = account.substr(8);
-    pdir = pdir.substr(5);
-    name = name.substr(5);
+int rmdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdir, const string &name) {
     MYSQL_RES *res;
     MYSQL_ROW row;
     string command = "select * from storage where type=\"d\" and name=\"" + name + "\" and pdir=\"" + pdir +"\" and account=\"" + account + "\"";
@@ -469,32 +460,46 @@ int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     }
 }
 
-int handle_cpdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
-    int i = 0;
-    string account, pdir, name, dst;
-    for (; i < rn && buf[i] != '\n'; ++i) {
-        ;
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        account += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        pdir += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        name += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        dst += buf[i];
-    }
-    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
-        msg = "format error\n";
+int mvdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdir, const string &name, const string &dst) {
+    string command = "select * from storage where type=\"d\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+    mysql_query(mysql, command.c_str());
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "A dir with the same name exists\n";
         return FAILED;
     }
-    account = account.substr(8);
-    pdir = pdir.substr(5);
-    name = name.substr(5);
-    dst = dst.substr(4);
+    else {
+        // 移动文件夹本身
+        command = "update storage set pdir=\"" + dst + "\" where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+        mysql_query(mysql, command.c_str());
+        // 准备移动文件夹下其他文件/文件夹
+        string dir = pdir + name + "/";
+        command = "select * from storage where acount=\"" + account + "\"";
+        mysql_query(mysql, command.c_str());
+        res = mysql_store_result(mysql);
+        while ((row = mysql_fetch_row(res)) != NULL) {
+            if (dir == string(row[2]).substr(0, dir.length())) {
+                // 检查是否在该目录下
+                if (!strcmp(row[1], "d")) {
+                    // 移动子文件夹
+                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(dir.length()) + "\" where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+                    mysql_query(mysql, command.c_str());
+                }
+                else if (!strcmp(row[1], "r")) {
+                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(dir.length()) + "\" where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\" and md5=\"" + string(row[4]) + "\"";
+                    mysql_query(mysql, command.c_str());
+                }
+            }
+        }
+        logger("用户"+account+"移动文件夹"+pdir+name+"至"+dst);
+        msg = "mvdir successfully\n";
+        return ACCEPT;
+    }
+}
+
+int cpdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdir, const string &name, const string &dst) {
     MYSQL_RES *res;
     MYSQL_ROW row;
     string command = "select * from storage where type=\"d\" and name=\"" + name + "\" and pdir=\"" + dst +"\" and account=\"" + account + "\"";
@@ -539,6 +544,60 @@ int handle_cpdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     }
 }
 
+int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    return rmdir(mysql, msg, account, pdir, name);
+}
+
+int handle_cpdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    return cpdir(mysql, msg, account, pdir, name, dst);
+}
+
 int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
     string account, pdir, name, dst;
@@ -564,42 +623,7 @@ int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     pdir = pdir.substr(5);
     name = name.substr(5);
     dst = dst.substr(4);
-    string command = "select * from storage where type=\"d\" and pdir=\"" + dst + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
-    mysql_query(mysql, command.c_str());
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    res = mysql_store_result(mysql);
-    if ((row = mysql_fetch_row(res)) != NULL) {
-        msg = "A dir with the same name exists\n";
-        return FAILED;
-    }
-    else {
-        // 移动文件夹本身
-        command = "update storage set pdir=\"" + dst + "\" where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
-        mysql_query(mysql, command.c_str());
-        // 准备移动文件夹下其他文件/文件夹
-        string dir = pdir + name + "/";
-        command = "select * from storage where acount=\"" + account + "\"";
-        mysql_query(mysql, command.c_str());
-        res = mysql_store_result(mysql);
-        while ((row = mysql_fetch_row(res)) != NULL) {
-            if (dir == string(row[2]).substr(0, dir.length())) {
-                // 检查是否在该目录下
-                if (!strcmp(row[1], "d")) {
-                    // 移动子文件夹
-                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(dir.length()) + "\" where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
-                    mysql_query(mysql, command.c_str());
-                }
-                else if (!strcmp(row[1], "r")) {
-                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(dir.length()) + "\" where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\" and md5=\"" + string(row[4]) + "\"";
-                    mysql_query(mysql, command.c_str());
-                }
-            }
-        }
-        logger("用户"+account+"移动文件夹"+pdir+name+"至"+dst);
-        msg = "mvdir successfully\n";
-        return ACCEPT;
-    }
+    return mvdir(mysql, msg, account, pdir, name, dst);
 }
 
 int handle_download(char *buf, int rn, MYSQL *(&mysql), string &msg, char *sd, int size) {
@@ -699,4 +723,121 @@ int handle_rename(char *buf, int rn, MYSQL *(&mysql), string &msg) {
         logger("用户" + account + "的" + pdir + name + "改名为" + pdir + newname);
         return ACCEPT;
     }
+}
+
+int handle_copyensure(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    remove(mysql, msg, account, dst, name);
+    return copy(mysql, msg, account, pdir, name, dst);
+}
+
+int handle_moveensure(char *buf, int rn, MYSQL *(&mysql), string &msg) { 
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=" || account.substr(0, 8) != "account=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    remove(mysql, msg, account, dst, name);
+    return move(mysql, msg, account, pdir, name, dst);
+}
+
+int handle_cpdirensure(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    rmdir(mysql, msg, account, dst, name);
+    return cpdir(mysql, msg, account, pdir, name, dst);
+}
+
+int handle_mvdirensure(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name, dst;
+    for (; i < rn && buf[i] != '\n'; ++i)
+        ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        dst += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    dst = dst.substr(4);
+    rmdir(mysql, msg, account, dst, name);
+    return mvdir(mysql, msg, account, pdir, name, dst);
 }

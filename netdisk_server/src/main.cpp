@@ -102,6 +102,21 @@ int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep) {
         else if (event == "rename") {
             ret = handle_rename(buf, rn, mysql, msg);
         }
+        else if (event == "cpdir") {
+            ret = handle_cpdir(buf, rn, mysql, msg);
+        }
+        else if (event == "copyensure") {
+            ret = handle_copyensure(buf, rn, mysql, msg);
+        }
+        else if (event == "moveensure") {
+            ret = handle_moveensure(buf, rn, mysql, msg);
+        }
+        else if (event == "mvdirensure") {
+            ret = handle_mvdirensure(buf, rn, mysql, msg);
+        }
+        else if (event == "cpdirensure") {
+            ret = handle_cpdirensure(buf, rn, mysql, msg);
+        }
         else {
             msg = "event error\n";
             ret = FAILED;
@@ -179,7 +194,6 @@ void handle(int server_fd, MYSQL *(&mysql)) {
         }
     }
 }
-
 
 
 int cmdlineParse(Arguments &args, int argc, char * argv[]) {
