@@ -1,39 +1,11 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="GB18030">
-<title>登录</title>
-<script src="./js/login.js"></script>
-</head>
- 
-<body>
-    <br><br><br><br><br><br>
-    <center><h2>登录界面</h2></center>
-    <br><br><br><br><br><br>
-    <center>
-        <form name="login" action="./php/login.php" onsubmit="return checkValid()" method="post">
-            <table>
-                <tr>
-                    <td>用户名: </td>
-                    <td><input type="text" name="ID"></td>
-                </tr>
-                <tr>
-                    <td>密码: </td>
-                    <td><input type="password" name="passwd"></td>
-                </tr>
-
-            </table>
-            <input type="submit" value="登录">
-        </form>
-    </center>
-    <br>
-
-    <a href='{{url_for("test_student_record")}}' style="display: none">测试学生</a>
-    <br>
-    <a href='{{url_for("test_teacher_monitor")}}' style="display: none">测试老师</a>
-    <br>
-    <a href="./YangTest/"  style="display: none">跳转测试</a>
-
-</body>
- 
+<mata charset="gbk">
+    <h1>登录界面</h1>
+    <form name="login-input" action="./login.php" method="post">
+        用户名: <input type="text" name="account"><br>
+        密码: <input type="password" name="passwd"><br>
+        <a href="./register.html">前往注册</a>
+        <input type="submit" value="登录">
+    </form> 
 </html>
