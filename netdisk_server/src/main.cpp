@@ -13,6 +13,7 @@
 #include "tools.h"
 #include "login.h"
 #include "file_manage.h"
+#include "argparse.h"
 #include <fstream>
 #include <mysql.h>  // mysql特有
 #include "my_daemon.h"
@@ -21,6 +22,16 @@ using namespace std;
 #define EPOLL_SIZE 1024
 #define MAX_LINK 1000
 #define TIMEOUT 600
+
+static Option options[] = {
+    {"port", REQUIRED, REQUIRED, "--port [端口号]", "指定服务端端口号"},
+    {"ip", OPTIONAL, REQUIRED, "--ip [ip地址]", "指定服务器绑定地址"}
+};
+
+struct Arguments {
+    int port;
+    string ip;
+};
 
 const char* exceptions[] = {
     "accepted\n",
@@ -169,18 +180,43 @@ void handle(int server_fd, MYSQL *(&mysql)) {
     }
 }
 
-int main() {
+
+
+int cmdlineParse(Arguments &args, int argc, char * argv[]) {
+    ArgParser argp(options, sizeof(options) / sizeof(Option), 0);
+    if (argp.parse(argc, argv) != 0) {
+        return -1;
+    }
+    if (argp.getOpt("port", args.port) == -1) {
+        return -1;
+    }
+    if (args.port < 0 || args.port > 65535) {
+        cout << "port范围超出限制! 范围为[0..65535]" << endl;
+        return -1;
+    }
+    if (argp.getOpt("ip", args.ip) != 0) {
+        args.ip = "";
+        return 0;   
+    }
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    Arguments args = {-1};
+    if (cmdlineParse(args, argc, argv) < 0) {
+        exit(EXIT_FAILURE);
+    }
+
     my_daemon(1, 1);
     Server server;
-    string ip = "192.168.80.230";
-    int port = 4000;
+
     mkdir("/usr/netdisk-file",0777);
     MYSQL *mysql;
     // MYSQL *mysql_user;
     if (connect_mysql(mysql, "netdisk") < 0) {
         return -1;
     }
-    if (server_init(server, ip, port) != 0) {
+    if (server_init(server, args.ip, args.port) != 0) {
         return -1;
     }
 

@@ -1,5 +1,5 @@
 // my_daemon.cpp
-#include "../include/my_daemon.h"
+#include "my_daemon.h"
 #include <iostream>
 #include <unistd.h>
 #include <signal.h>		// sigaction

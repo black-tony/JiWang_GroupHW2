@@ -80,7 +80,7 @@ int user_login(MYSQL *(&mysql), const string &account, const string &passwd, str
     query(mysql, res, command);
     if ((row = mysql_fetch_row(res)) != NULL) {
         if (row[1] != passwd) {
-            msg = "incorrect account or password\n";
+            msg = "incorrect password\n";
             return FAILED;
         }
         else {

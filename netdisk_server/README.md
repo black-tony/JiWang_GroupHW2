@@ -17,7 +17,7 @@ mysql -u root -proot123
 create database netdisk;
 use netdisk;
 create table user (account varchar(255), passwd varchar(255));
-create table file (md5 varchar(255), status varchar(255));
+create table file (md5 varchar(255), status varchar(255), link int);
 create table storage (account varchar(255), type varchar (1), pdir varchar(255), name varchar(255), md5 varchar(255));
 ```
 
@@ -37,7 +37,7 @@ login后会绑定用户的account和socket fd
 begin时进行数据库的文件检查,如果有相同的完整文件会直接"秒传",回发"completed\n",如果有相同但不完整的文件会断点续传,回发"accepted\nresume upload\n[第x字节开始,这里是个十进制整数]\n",如果是全新的文件,正常开始上传并写入数据库记录,回发"accepted\n"  
 continue时在文件末继续写入,回发"accepted\n"  
 finish时标记文件完整,回发"completed\n"  
-begin可以有也可没有内容,finish没有内容,会在login后标记account,故文件上传每个用户需要分开登录再各自上传,不能互相上传
+begin可以有也可没有内容,finish没有内容
 
 文件保存在与可执行文件同目录下的file目录里,文件名统一改为其md5(用发的md5,进行了1400+KB大小的文件上传验证,传输过程不错应该没问题)
 
@@ -50,12 +50,14 @@ begin可以有也可没有内容,finish没有内容,会在login后标记account,故文件上传每个用户
 发送"event=list\npdir=/"  
 回发"accepted\nf test.txt\n",f/d和名字间有空格
 
-以下没怎么测过
-
 <strong>文件移动</strong>: "event=move\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[移动目标位置,"/"结尾]\n"  
 <strong>文件复制</strong>: "event=copy\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\ndst=[粘贴目标位置,"/"结尾]\n"  
 <strong>文件删除</strong>: "event=remove\naccount=[用户名]\npdir=[文件所在位置,"/"结尾]\nname=[文件名]\n"  
 <strong>文件夹创建</strong>: "event=mkdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\n"  
+
+以下没怎么测过
+
+<strong>文件夹复制</strong>: "event=cpdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[粘贴目标位置,"/"结尾]\n"  
 <strong>文件夹删除(含里面内容)</strong>: "event=rmdir\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\n"  
 <strong>文件夹移动(含内面内容)</strong>: "event=move\naccount=[用户名]\npdir=[文件夹所在位置,"/"结尾]\nname=[文件夹名]\ndst=[移动目标位置,"/"结尾]\n"  
 
