@@ -1,5 +1,3 @@
 # 网页版Client端
-
-windows下可以运行, 需要安装xmapp, 配置Apache(httpd)
-
-linux端需要配置httpd和php
+linux端需要配置httpd和php mariadb
+C++和php的数据库支持

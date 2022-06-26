@@ -45,7 +45,7 @@ int begin_upload(char *content, int size, MYSQL *(&mysql), const string &md5, co
                 msg = "resume upload\n" + to_string(statbuf.st_size) + "\n";
                 return ACCEPT;
             // 获取文件大小失败,重新传
-            fstream fout("./file/" + md5, ios::out | ios::trunc | ios::binary);
+            fstream fout("/usr/netdisk-file/" + md5, ios::out | ios::trunc | ios::binary);
             fout.write(content, size);
             fout.close();
             msg = "upload begin\n";
@@ -72,7 +72,7 @@ int begin_upload(char *content, int size, MYSQL *(&mysql), const string &md5, co
     //     return ACCEPT;
     // }
 
-    fstream fout("./file/" + md5, ios::out | ios::binary);
+    fstream fout("/usr/netdisk-file/" + md5, ios::out | ios::binary);
     fout.write(content, size);
     fout.close();
     command = "insert into file(md5,status)values(\"" + md5 + "\",\"incomplete\")";
@@ -84,7 +84,7 @@ int begin_upload(char *content, int size, MYSQL *(&mysql), const string &md5, co
 }
 
 int continue_upload(char *content, int size, const string &md5, string &msg) {
-    fstream fout("./file/" + md5, ios::out | ios::app | ios::binary);
+    fstream fout("/usr/netdisk-file/" + md5, ios::out | ios::app | ios::binary);
     fout.write(content, size);
     fout.close();
     msg = "uploading\n";
@@ -92,7 +92,16 @@ int continue_upload(char *content, int size, const string &md5, string &msg) {
 }
 
 int finish_upload(MYSQL *(&mysql), const string &account ,const string &pdir, const string &filename, const string &md5, string &msg) {
-    string command = "update file set status=\"complete\" where md5=\"" + md5 + "\" and status=\"incomplete\"";
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    string command = "select * from file where md5=\"" + md5 + "\"";
+    mysql_query(mysql, command.c_str());
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) == NULL) {
+        command = "insert into file(md5,status)values(\"" + md5 + "\",\"incomplete\")";
+        mysql_query(mysql, command.c_str());
+    }
+    command = "update file set status=\"complete\" where md5=\"" + md5 + "\" and status=\"incomplete\"";
     if (mysql_query(mysql, command.c_str())) {
         cerr << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
         msg = "upload failed, mysql error\n";
@@ -109,11 +118,14 @@ int finish_upload(MYSQL *(&mysql), const string &account ,const string &pdir, co
     return COMPLETE;
 }
 
-int handle_upload(char *buf, int rn, const string &account, MYSQL *(&mysql), string &msg) {
+int handle_upload(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string stage, md5, pdir, filename;
+    string account, stage, md5, pdir, filename;
     for (; i < rn && buf[i] != '\n'; ++i)
         ;   // event=upload
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         stage += buf[i];
     }
@@ -128,7 +140,8 @@ int handle_upload(char *buf, int rn, const string &account, MYSQL *(&mysql), str
     }
     ++i;
 
-    if (stage.substr(0, 6) == "stage=" && md5.substr(0, 4) == "md5=" && pdir.substr(0, 5) == "pdir=" && filename.substr(0, 9) == "filename=") {
+    if (stage.substr(0, 6) == "stage=" && md5.substr(0, 4) == "md5=" && pdir.substr(0, 5) == "pdir=" && filename.substr(0, 9) == "filename=" && account.substr(0, 8) == "account=") {
+        account = account.substr(8);
         stage = stage.substr(6);
         md5 = md5.substr(4);
         pdir = pdir.substr(5);
@@ -147,18 +160,22 @@ int handle_upload(char *buf, int rn, const string &account, MYSQL *(&mysql), str
     return FAILED;
 }
 
-int handle_list(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+int handle_list(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string pdir;
+    string account, pdir;
     for (; i < rn && buf[i] != '\n'; ++i)
         ;   // event=upload
     for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
     }
-    if (pdir.substr(0, 5) != "pdir=")  {
+    if (pdir.substr(0, 5) != "pdir=" || account.substr(0, 8) != "account=")  {
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(8);
     pdir = pdir.substr(5);
     string command = "select * from storage where pdir=\"" + pdir + "\" and account=\"" + account + "\"";
     mysql_query(mysql, command.c_str());
@@ -176,20 +193,23 @@ int handle_list(char *buf, int rn, MYSQL *(&mysql), const string &account, strin
         msg += "\n";
     }
 
-    if (pdir_exist) {
+    // if (!pdir_exist && pdir != "/") {
+    //     msg = "no such directory\n";
+    //     return FAILED;
+    // }
+    // else {
         return ACCEPT;
-    }
-    else  {
-        msg = "no such directory\n";
-        return FAILED;
-    }
+    //}
 }
 
-int handle_move(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+int handle_move(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string pdir, name, dst;
+    string account, pdir, name, dst;
     for (; i < rn && buf[i] != '\n'; ++i)
         ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
     }
@@ -199,10 +219,11 @@ int handle_move(char *buf, int rn, MYSQL *(&mysql), const string &account, strin
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         dst += buf[i];
     }
-    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+    if (pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=" || account.substr(0, 8) != "account=")  {
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(8);
     pdir = pdir.substr(5);
     name = name.substr(5);
     dst = dst.substr(4);
@@ -231,11 +252,14 @@ int handle_move(char *buf, int rn, MYSQL *(&mysql), const string &account, strin
     return FAILED;
 }
 
-int handle_copy(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+int handle_copy(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string pdir, name, dst;
+    string account, pdir, name, dst;
     for (; i < rn && buf[i] != '\n'; ++i)
         ;
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
     }
@@ -245,10 +269,11 @@ int handle_copy(char *buf, int rn, MYSQL *(&mysql), const string &account, strin
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         dst += buf[i];
     }
-    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(8);
     pdir = pdir.substr(5);
     name = name.substr(5);
     dst = dst.substr(4);
@@ -278,21 +303,25 @@ int handle_copy(char *buf, int rn, MYSQL *(&mysql), const string &account, strin
     return FAILED;
 }
 
-int handle_remove(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+int handle_remove(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string pdir, name;
+    string account, pdir, name;
     for (; i < rn && buf[i] != '\n'; ++i)
         ;
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
     }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         name += buf[i];
     }
-    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=")  {
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=")  {
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(8);
     pdir = pdir.substr(5);
     name = name.substr(5);
     string command = "select * from storage where pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
@@ -317,46 +346,14 @@ int handle_remove(char *buf, int rn, MYSQL *(&mysql), const string &account, str
     return ACCEPT;
 }
 
-int handle_mkdir(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+int handle_mkdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string name, dst;
+    string account, name, pdir;
     for (; i < rn && buf[i] != '\n'; ++i) {
         ;
     }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
-        name += buf[i];
-    }
-    for (++i; i < rn && buf[i] != '\n'; ++i) {
-        dst += buf[i];
-    }
-    if (name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
-        msg = "format error\n";
-        return FAILED;
-    }
-    name = name.substr(5);
-    dst = dst.substr(4);
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    string command = "select * from storage where account=\"" + account + "\" and type=\"d\" and dst=\"" + dst + "\" and name=\"" + name + "\")";
-    mysql_query(mysql, command.c_str());
-    res = mysql_store_result(mysql);
-    if ((row = mysql_fetch_row(res)) != NULL) {
-        msg = "a dir with same name exists\n";
-        return FAILED;
-    }
-
-    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + dst + "\",\"" + name + "\",\"\")";
-    mysql_query(mysql, command.c_str());
-
-    msg = "mkdir successfully\n";
-    return ACCEPT;
-}
-
-int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
-    int i = 0;
-    string pdir, name;
-    for (; i < rn && buf[i] != '\n'; ++i) {
-        ;
+        account += buf[i];
     }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
@@ -364,10 +361,50 @@ int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), const string &account, stri
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         name += buf[i];
     }
-    if (pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=")  {
+    if (name.substr(0, 5) != "name=" && pdir.substr(0, 5) != "pdir=")  {
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(8);
+    name = name.substr(5);
+    pdir = pdir.substr(5);
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    string command = "select * from storage where account=\"" + account + "\" and type=\"d\" and pdir=\"" + pdir + "\" and name=\"" + name + "\")";
+    mysql_query(mysql, command.c_str());
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "a dir with same name exists\n";
+        return FAILED;
+    }
+
+    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + pdir + "\",\"" + name + "\",\"\")";
+    mysql_query(mysql, command.c_str());
+
+    msg = "mkdir successfully\n";
+    return ACCEPT;
+}
+
+int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, pdir, name;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
     pdir = pdir.substr(5);
     name = name.substr(5);
     MYSQL_RES *res;
@@ -389,11 +426,14 @@ int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), const string &account, stri
     }
 }
 
-int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg) {
+int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     int i = 0;
-    string pdir, name, dst;
+    string account, pdir, name, dst;
     for (; i < rn && buf[i] != '\n'; ++i)
         ;   // event=move
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
     }
@@ -403,10 +443,11 @@ int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), const string &account, stri
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         dst += buf[i];
     }
-    if (pdir.substr(0, 5) != "pdir=" && name.substr(0, 5) != "name=" && dst.substr(0, 4) != "dst=")  {
+    if (account.substr(0, 8) != "account=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name=" || dst.substr(0, 4) != "dst=")  {
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(8);
     pdir = pdir.substr(5);
     name = name.substr(5);
     dst = dst.substr(4);
@@ -437,11 +478,14 @@ int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), const string &account, stri
     return FAILED;
 }
 
-int handle_download(char *buf, int rn, MYSQL *(&mysql), const string &account, string &msg, char *sd, int &size) {
+int handle_download(char *buf, int rn, MYSQL *(&mysql), string &msg, char *sd, int &size) {
     int i = 0;
-    string pdir, name, pos;
+    string account, pdir, name, pos;
     for (; i < rn && buf[i] != '\n'; ++i) {
         ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
     }
     for (++i; i < rn && buf[i] != '\n'; ++i) {
         pdir += buf[i];
@@ -456,6 +500,7 @@ int handle_download(char *buf, int rn, MYSQL *(&mysql), const string &account, s
         msg = "format error\n";
         return FAILED;
     }
+    account = account.substr(0, 8);
     pdir = pdir.substr(0, 5);
     name = name.substr(0, 5);
     pos = pos.substr(0, 4);
@@ -466,7 +511,7 @@ int handle_download(char *buf, int rn, MYSQL *(&mysql), const string &account, s
     res = mysql_store_result(mysql);
     if ((row = mysql_fetch_row(res)) != NULL) {
         string md5 = row[4];
-        fstream fin("file/" + md5, ios::in | ios::binary);
+        fstream fin("/usr/netdisk-file/" + md5, ios::in | ios::binary);
         fin.seekg(stoll(pos), ios::beg);
         fin.read(sd, 4096);
         size = fin.gcount();
@@ -480,4 +525,52 @@ int handle_download(char *buf, int rn, MYSQL *(&mysql), const string &account, s
     }
     msg = "download error\n";
     return FAILED;
+}
+
+int handle_rename(char *buf, int rn, MYSQL *(&mysql), string &msg) {
+    int i = 0;
+    string account, type, pdir, name, newname;
+    for (; i < rn && buf[i] != '\n'; ++i) {
+        ;
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        account += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        type += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        pdir += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        name += buf[i];
+    }
+    for (++i; i < rn && buf[i] != '\n'; ++i) {
+        newname += buf[i];
+    }
+    if (account.substr(0, 8) != "account=" || type.substr(0,5) != "type=" || pdir.substr(0, 5) != "pdir=" || name.substr(0, 5) != "name="  || newname.substr(0, 8) != "newname=")  {
+        msg = "format error\n";
+        return FAILED;
+    }
+    account = account.substr(8);
+    type = type.substr(5);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    newname = newname.substr(8);
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    string command = "select * from storage where account=\"" + account + "\" and pdir=\"" + pdir + "\" and name=\"" + newname + "\" and type=\"" + type + "\"";
+    mysql_query(mysql, command.c_str());
+    res = mysql_store_result(mysql);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        // 存在同名
+        msg = "same name exists";
+        return FAILED;
+    }
+    else {
+        command = "update storage set name=\"" + newname + "\" where account=\"" + account + "\" and pdir=\"" + pdir + "\" and name=\"" + name + "\" and type=\"" + type + "\"";
+        mysql_query(mysql, command.c_str());
+        msg = "rename successfully";
+        return ACCEPT;
+    }
 }

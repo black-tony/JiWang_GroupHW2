@@ -62,34 +62,37 @@ int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep) {
             ret = handle_login(buf, rn, mysql, client, msg);
         }
         else if (event == "upload") {
-            ret = handle_upload(buf, rn, client.account ,mysql, msg);
+            ret = handle_upload(buf, rn, mysql, msg);
         }
         else if (event == "list") {
-            ret = handle_list(buf, rn, mysql, client.account, msg);
+            ret = handle_list(buf, rn, mysql, msg);
         }
         else if (event == "move") {
-            ret = handle_move(buf, rn, mysql, client.account, msg);
+            ret = handle_move(buf, rn, mysql, msg);
         }
         else if (event == "copy") {
-            ret = handle_copy(buf, rn, mysql, client.account, msg);
+            ret = handle_copy(buf, rn, mysql, msg);
         }
         else if (event == "remove") {
-            ret = handle_remove(buf, rn, mysql, client.account, msg);
+            ret = handle_remove(buf, rn, mysql, msg);
         }
         else if (event == "mkdir") {
-            ret = handle_mkdir(buf, rn, mysql, client.account, msg);
+            ret = handle_mkdir(buf, rn, mysql, msg);
         }
         else if (event == "rmdir") {
-            ret = handle_rmdir(buf, rn, mysql, client.account, msg);
+            ret = handle_rmdir(buf, rn, mysql, msg);
         }
         else if (event == "mvdir") {
-            ret = handle_mvdir(buf, rn, mysql, client.account, msg);
+            ret = handle_mvdir(buf, rn, mysql, msg);
         }
         else if (event == "download") {
-            ret = handle_download(buf, rn, mysql, client.account, msg, sd, size);
+            ret = handle_download(buf, rn, mysql, msg, sd, size);
+        }
+        else if (event == "rename") {
+            ret = handle_rename(buf, rn, mysql, msg);
         }
         else {
-            msg = "format error\n";
+            msg = "event error\n";
             ret = FAILED;
         }
     }
@@ -171,7 +174,7 @@ int main() {
     Server server;
     string ip = "192.168.80.230";
     int port = 4000;
-    mkdir("./file",0755);
+    mkdir("/usr/netdisk-file",0777);
     MYSQL *mysql;
     // MYSQL *mysql_user;
     if (connect_mysql(mysql, "netdisk") < 0) {

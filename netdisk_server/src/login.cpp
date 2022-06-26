@@ -117,7 +117,6 @@ int handle_login(char *buf, int rn, MYSQL *(&mysql), Client &client, string &msg
                 return FAILED;
             }
             else {
-                client.account = account;
                 return ACCEPT;
             }
         }
