@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: cp936 -*-
 
 # Form implementation generated from reading ui file 'upload.ui'
 #
@@ -74,8 +74,8 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.RemoteLastDir.setText(_translate("Form", "‰∏ä‰∏ÄÁ∫ß"))
-        self.DowLoad.setText(_translate("Form", "‰∏ãËΩΩ"))
-        self.LocalLastDir.setText(_translate("Form", "‰∏ä‰∏ÄÁ∫ß"))
-        self.UpLoad.setText(_translate("Form", "‰∏ä‰º†"))
+        self.RemoteLastDir.setText(_translate("Form", "…œ“ªº∂"))
+        self.DowLoad.setText(_translate("Form", "œ¬‘ÿ"))
+        self.LocalLastDir.setText(_translate("Form", "…œ“ªº∂"))
+        self.UpLoad.setText(_translate("Form", "…œ¥´"))
 

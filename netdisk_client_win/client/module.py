@@ -1,7 +1,8 @@
 # -*- coding: cp936 -*-
-from PyQt5.QtWidgets import (QWidget, QTableWidgetItem, QAbstractItemView, QFileIconProvider, QMenu, QMessageBox)
-from PyQt5.QtCore import Qt, QFileInfo, pyqtSignal
-from PyQt5.Qt import QApplication
+from PyQt5.QtCore import Qt, pyqtSignal, QFileInfo
+from PyQt5.QtWidgets import (QWidget, QTableWidgetItem, QAbstractItemView, QFileIconProvider, QMenu, QMessageBox,
+                             QApplication)
+
 
 from main_window import Ui_Form
 from sub_windoow import Ui_widget

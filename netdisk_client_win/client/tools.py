@@ -1,3 +1,4 @@
+# -*- coding: cp936 -*-
 import os
 import time
 import json
@@ -5,6 +6,8 @@ import shutil
 import psutil
 import platform
 
+#from PyQt5.QtCore import QFileInfo
+#from PyQt5.QtWidgets import QFileIconProvider
 from PyQt5.QtCore import QFileInfo
 from PyQt5.QtWidgets import QFileIconProvider
 
@@ -80,7 +83,7 @@ def get_disk():
         for i in psutil.disk_partitions():
             disk.append(i.device.replace("\\", "/"))
     else:
-        disk.append("/home")
+        disk.append("/")
     return disk
 
 
@@ -124,44 +127,44 @@ def listdir(abs_path, include_conceal=True):
 
 def mkdir(dir_path):
     if not dir_path:
-        return False, "ä¸èƒ½ä¸ºç©º"
+        return False, "²»ÄÜÎª¿Õ"
     if os.path.exists(dir_path):
-        return False, f"{dir_path} å·²å­˜åœ¨ï¼"
+        return False, f"{dir_path} ÒÑ´æÔÚ£¡"
     try:
         os.mkdir(dir_path)
         return True, ""
     except Exception as e:
-        return False, f"å¼‚å¸¸ {str(e)}"
+        return False, f"Òì³£ {str(e)}"
 
 
 def rename(old, new):
     if not old or not new:
-        return False, "ä¸èƒ½ä¸ºç©º"
+        return False, "²»ÄÜÎª¿Õ"
     if os.path.exists(new):
-        return False, f"{new} å·²å­˜åœ¨ï¼"
+        return False, f"{new} ÒÑ´æÔÚ£¡"
     else:
         try:
             os.renames(old, new)
             return True, ""
         except Exception as e:
-            return False, f"å¼‚å¸¸ {str(e)}"
+            return False, f"Òì³£ {str(e)}"
 
 
 def remove(abs_path):
-    # åˆ é™¤ç›®å½•
+    # É¾³ıÄ¿Â¼
     if os.path.isdir(abs_path):
         try:
             shutil.rmtree(path=abs_path)
             return True, ""
         except Exception as e:
-            return False, f"åˆ é™¤å¤±è´¥ {str(e)}"
-    # åˆ é™¤æ–‡ä»¶
+            return False, f"É¾³ıÊ§°Ü {str(e)}"
+    # É¾³ıÎÄ¼ş
     else:
         try:
             os.remove(abs_path)
             return True, ""
         except Exception as e:
-            return False, f"åˆ é™¤å¤±è´¥{str(e)}"
+            return False, f"É¾³ıÊ§°Ü{str(e)}"
 
 def padding_data(data, need_len):
     data += b"*" * need_len
@@ -176,24 +179,24 @@ def decode_dict(bytes_data):
     except Exception as e:
         print("decode_dict error", e, bytes_data)
 
-# ç¼–ç æ•°æ®
+# ±àÂëÊı¾İ
 def encode_dict(dict_data):
     return json.dumps(dict_data).encode()
 
 def list_dir_all(path, name):
     create_root = False
     abs_path = os.path.join(path, name)
-    if os.path.isdir(abs_path):    # å‘é€çš„æ˜¯ç›®å½•
+    if os.path.isdir(abs_path):    # ·¢ËÍµÄÊÇÄ¿Â¼
         for home, dirs, files in os.walk(abs_path):
             if not create_root:
                 create_root = True
                 yield 0, name
             new_home = home.replace(path, '')
-            # è·å¾—æ‰€æœ‰æ–‡ä»¶å¤¹
+            # »ñµÃËùÓĞÎÄ¼ş¼Ğ
             for dirname in dirs:
                 yield 0, os.path.join(new_home, dirname)
 
-            # è·å¾—æ‰€æœ‰æ–‡ä»¶
+            # »ñµÃËùÓĞÎÄ¼ş
             for filename in files:
                yield 1, os.path.join(new_home, filename)
     else:

@@ -1,10 +1,12 @@
+# -*- coding: cp936 -*-
 import os
 import json
 import time
 import queue
 import threading
 import hashlib
-from PyQt5.Qt import QApplication
+#from PyQt5.Qt import QApplication
+from PyQt5.QtWidgets import QApplication
 
 from base_socket import BaseSocket
 
@@ -17,19 +19,19 @@ class FileIO:
         self.read_len = read_len
         if read_path:
             if not os.path.exists(read_path):
-                raise (f"æ–‡ä»¶ {read_path} ä¸å­˜åœ¨",)
+                raise (f"ÎÄ¼ş {read_path} ²»´æÔÚ",)
             self.abs_path = read_path
             mode = "rb"
         else:
             if not os.path.exists(os.path.dirname(write_path)):
-                raise Exception(f"æ–‡ä»¶å¤¹ {write_path} ä¸å­˜åœ¨")
+                raise Exception(f"ÎÄ¼ş¼Ğ {write_path} ²»´æÔÚ")
             if os.path.exists(write_path):
                 if cover_write:
                     succ, msg = tools.remove(write_path)
                     if not succ:
                         raise Exception(msg)
                 else:
-                    raise Exception(f"æ–‡ä»¶  {write_path} å·²å­˜åœ¨")
+                    raise Exception(f"ÎÄ¼ş  {write_path} ÒÑ´æÔÚ")
             self.abs_path = write_path
             mode = "wb"
         self.FP = open(self.abs_path, mode)
@@ -41,11 +43,11 @@ class FileIO:
             file_stream = self.stream_queue.get()
             if isinstance(file_stream, dict):
                 self.close_file()
-                print(f"æ–‡ä»¶æµ {file_stream['write_path']} å†™å…¥ç£ç›˜æˆåŠŸ")
+                print(f"ÎÄ¼şÁ÷ {file_stream['write_path']} Ğ´Èë´ÅÅÌ³É¹¦")
             else:
-                # print(f"å†™å…¥æµ {len(file_stream)}")
+                # print(f"Ğ´ÈëÁ÷ {len(file_stream)}")
                 self.write_data(file_stream)
-        # print("Fileå¯¹è±¡é‡Šæ”¾äº†")
+        # print("File¶ÔÏóÊÍ·ÅÁË")
 
     def write_data(self, data):
         self.FP.write(data)
@@ -63,8 +65,8 @@ class FileIO:
 
 class Handler:
     """
-    å¯å‘é€æ–‡ä»¶
-    å¯å‘é€å¯¹è±¡
+    ¿É·¢ËÍÎÄ¼ş
+    ¿É·¢ËÍ¶ÔÏó
     """
     def __init__(self,
                 base_socket,
@@ -74,7 +76,7 @@ class Handler:
                  once_recv,
                  padding_char=b"*",
                  on_error=None):
-        self.file_io = file_io              # å½“æ¥å—åˆ°æ–‡ä»¶æ—¶å€™
+        self.file_io = file_io              # µ±½ÓÊÜµ½ÎÄ¼şÊ±ºò
         self.once_recv = once_recv
         self.base_socket = base_socket
         self.padding_char = padding_char
@@ -86,52 +88,53 @@ class Handler:
         self.recv_allow_send_response = False
         self.local_reload = None
 
-        self.show_progress = None   # ä¿¡å·æ§½
+        self.show_progress = None   # ĞÅºÅ²Û
         self.hide_progress = None
         self.set_status = None
 
         self.response_data = queue.Queue()
-    # è¿è¡Œå‚æ•°çš„åˆå§‹åŒ–
+    # ÔËĞĞ²ÎÊıµÄ³õÊ¼»¯
 
-    # æ¥å—ä¿¡æ¯ï¼ˆç»§æ‰¿RecvStreamç±»ï¼‰
+    # ½ÓÊÜĞÅÏ¢£¨¼Ì³ĞRecvStreamÀà£©
     def on_msg(self, b_data):
         try:
             protocol = self.decode_protocol(b_data)
-           # print('æ¥å—:')
+           # print('½ÓÊÜ:')
 
         except Exception as e:
-            print("è§£æåè®®å‡ºé”™", e, b_data, len(b_data))
+            print("½âÎöĞ­Òé³ö´í", e, b_data, len(b_data))
             return
         try:
-            print('æ¥å—',end='')
+            print('½ÓÊÜ',end='')
             print(protocol)
             code = protocol["code"]
             next_size = protocol.get("size")
             msg = protocol["msg"]
             #print(protocol)
         except Exception as e:
-            print("è§£æåè®®é”™è¯¯", e)
+            print("½âÎöĞ­Òé´íÎó", e)
             return
 
-        if code == 100:    # æ”¶åˆ°äº†æ–‡ä»¶æµ
-            print(f"æ”¶åˆ°æ–‡ä»¶æµ {protocol['write_path']}")
-            all_size = next_size
-            last_d = b''                        # æ¥æ”¶åˆ°ä¸Šä¸€ç»„çš„æ•°æ®
-            last_second_recv_bytes = int()      # ä¸Šä¸€ç§’æ¥æ”¶åˆ°çš„å­—èŠ‚æ•°ï¼Œç”¨äºè®¡ç®—ä¸‹è½½è¿›åº¦æ¡
-            last_second = int(time.time())      # ç”¨æ¥æ§åˆ¶é—´éš”ä¸€ç§’æ›´æ–°ä¸€æ¬¡ä¸‹è½½è¿›åº¦çš„å˜é‡
-            start_time = int(time.time())       # ä¸‹è½½æ•°æ®å¼€å§‹çš„æ—¶é—´
-            once_recv = self.once_recv          # è§„å®šäº†ä¸€æ¬¡æœ€å¤šæ¥æ”¶å¤šå°‘æ•°æ®
-            receive_size = 0                    # ä¸€å…±æ¥æ”¶äº†å¤šå°‘æ•°æ®
-            detail_size = tools.bytes_to_speed(all_size)   # éœ€è¦ä¸‹è½½çš„æ•°æ®å¤§å°ä»¥äººæ€§åŒ–æ–¹å¼å±•ç¤º
 
-            # é¦–æ¬¡æ¥æ”¶åˆ°æ–‡ä»¶ï¼Œéœ€è¦å®ä¾‹åŒ–ä¸€ä¸ªæ–‡ä»¶ç±»
+        if code == 100:    # ÊÕµ½ÁËÎÄ¼şÁ÷
+            print(f"ÊÕµ½ÎÄ¼şÁ÷ {protocol['write_path']}")
+            all_size = next_size
+            last_d = b''                        # ½ÓÊÕµ½ÉÏÒ»×éµÄÊı¾İ
+            last_second_recv_bytes = int()      # ÉÏÒ»Ãë½ÓÊÕµ½µÄ×Ö½ÚÊı£¬ÓÃÓÚ¼ÆËãÏÂÔØ½ø¶ÈÌõ
+            last_second = int(time.time())      # ÓÃÀ´¿ØÖÆ¼ä¸ôÒ»Ãë¸üĞÂÒ»´ÎÏÂÔØ½ø¶ÈµÄ±äÁ¿
+            start_time = int(time.time())       # ÏÂÔØÊı¾İ¿ªÊ¼µÄÊ±¼ä
+            once_recv = self.once_recv          # ¹æ¶¨ÁËÒ»´Î×î¶à½ÓÊÕ¶àÉÙÊı¾İ
+            receive_size = 0                    # Ò»¹²½ÓÊÕÁË¶àÉÙÊı¾İ
+            detail_size = tools.bytes_to_speed(all_size)   # ĞèÒªÏÂÔØµÄÊı¾İ´óĞ¡ÒÔÈËĞÔ»¯·½Ê½Õ¹Ê¾
+
+            # Ê×´Î½ÓÊÕµ½ÎÄ¼ş£¬ĞèÒªÊµÀı»¯Ò»¸öÎÄ¼şÀà
             if not self.file_fp:
                 try:
                     self.file_fp = self.file_io(write_path=protocol["write_path"])
                 except Exception as e:
-                    print("åˆå§‹åŒ–æ–‡ä»¶å¯¹è±¡é”™è¯¯ï¼š", str(e))
+                    print("³õÊ¼»¯ÎÄ¼ş¶ÔÏó´íÎó£º", str(e))
                     return
-            # å½“éœ€è¦æ¥æ”¶çš„æ•°æ®å¤§äºå•æ¬¡æœ€å¤§æ¥æ”¶é‡æ—¶ï¼Œéœ€è¦è¿›å…¥whileå¾ªç¯ï¼Œç›´åˆ°æ¥æ”¶å®Œæ¯•
+            # µ±ĞèÒª½ÓÊÕµÄÊı¾İ´óÓÚµ¥´Î×î´ó½ÓÊÕÁ¿Ê±£¬ĞèÒª½øÈëwhileÑ­»·£¬Ö±µ½½ÓÊÕÍê±Ï
             if all_size > once_recv:
                 while receive_size !=  all_size:
                     receive_data = self.base_socket.recv_once(once_recv)
@@ -139,17 +142,17 @@ class Handler:
                     last_second_recv_bytes += len(receive_data)
                     receive_size += len(receive_data)
 
-                    # ä¸ºäº†ä¸è®©IOè€½è¯¯æ—¶é—´ï¼Œè¿™é‡Œä½¿ç”¨å·¥å‚æ¨¡å¼å¤„ç†æ–‡ä»¶çš„å†™å…¥
+                    # ÎªÁË²»ÈÃIOµ¢ÎóÊ±¼ä£¬ÕâÀïÊ¹ÓÃ¹¤³§Ä£Ê½´¦ÀíÎÄ¼şµÄĞ´Èë
                     self.file_fp.stream_queue.put(receive_data)
 
-                    # å½“å‰©ä½™çš„æ•°æ®å°äºä¸€ç»„çš„å¤§å°ï¼Œéœ€è¦æ›´æ”¹ä¸‹ä¸€æ¬¡æ¥æ”¶å­—èŠ‚çš„æ•°é‡ï¼Œå¦åˆ™ä¼šæ‰“ä¹±æ•°æ®
+                    # µ±Ê£ÓàµÄÊı¾İĞ¡ÓÚÒ»×éµÄ´óĞ¡£¬ĞèÒª¸ü¸ÄÏÂÒ»´Î½ÓÊÕ×Ö½ÚµÄÊıÁ¿£¬·ñÔò»á´òÂÒÊı¾İ
                     if (all_size - receive_size) < once_recv:
                         once_recv = all_size - receive_size
 
-                    # æ¯ç§’é’Ÿæ›´æ–°ä¸‹è½½è¿›åº¦æ¡
+                    # Ã¿ÃëÖÓ¸üĞÂÏÂÔØ½ø¶ÈÌõ
                     if int(time.time()) != last_second and self.set_status:
                         progress = tools.Dict(
-                            operation="ä¼ é€ä¸­",
+                            operation="´«ËÍÖĞ",
                             name=os.path.basename(protocol["write_path"]),
                             progress=int(receive_size / all_size * 100),
                             speed=tools.bytes_to_speed(last_second_recv_bytes),
@@ -164,22 +167,22 @@ class Handler:
                 receive_data = self.base_socket.recv_once(all_size)
                 last_d = receive_data
                 self.file_fp.stream_queue.put(receive_data)
-            # å‘é€ä¸€ä¸ªå­—å…¸å¯¹è±¡ï¼Œè¡¨ç¤ºå†™å…¥ç»“æŸ
+            # ·¢ËÍÒ»¸ö×Öµä¶ÔÏó£¬±íÊ¾Ğ´Èë½áÊø
             self.file_fp.stream_queue.put(protocol)
             self.file_fp = None
-            print(f"æ–‡ä»¶å†™å…¥ç¼“å­˜æˆåŠŸ {os.path.basename(protocol['write_path'])} \n"
-                  f"æ–‡ä»¶ä¸€å…±{all_size} æ¥æ”¶äº† {receive_size}  æœ€åä¸€ç»„æ•°æ®é•¿åº¦ {len(last_d)} \n {last_d}")
+            print(f"ÎÄ¼şĞ´Èë»º´æ³É¹¦ {os.path.basename(protocol['write_path'])} \n"
+                  f"ÎÄ¼şÒ»¹²{all_size} ½ÓÊÕÁË {receive_size}  ×îºóÒ»×éÊı¾İ³¤¶È {len(last_d)} \n {last_d}")
 
-        elif code == 101:   # å®¢æˆ·ç«¯éœ€è¦ä¸‹è½½æ–‡ä»¶
+        elif code == 101:   # ¿Í»§¶ËĞèÒªÏÂÔØÎÄ¼ş
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             file_list = data["file_list"]
             write_to = data["write_path"]
-            print("å®¢æˆ·ä¸‹è½½æ–‡ä»¶", file_list)
+            print("¿Í»§ÏÂÔØÎÄ¼ş", file_list)
             self.send_files(file_list, write_to)
 
-        elif code == 200: # åˆ›å»ºæ–°ç›®å½•
-            # åªæœ‰æœåŠ¡å™¨æ‰ä¼šä½¿ç”¨æ­¤æ–¹æ³•
+        elif code == 200: # ´´½¨ĞÂÄ¿Â¼
+            # Ö»ÓĞ·şÎñÆ÷²Å»áÊ¹ÓÃ´Ë·½·¨
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             # if data.get("dir_path") == "C:/test/Keil/C51/Examples/ST uPSD/upsd3300/DK3300-ELCD/I2C/I2C_Master":
@@ -187,39 +190,39 @@ class Handler:
             dir_path = data["dir_path"]
             succ, msg = tools.mkdir(dir_path)
             if not succ:
-                # return self.send_data(201, 'åˆ›å»ºæ–°ç›®å½•æˆåŠŸ')
+                # return self.send_data(201, '´´½¨ĞÂÄ¿Â¼³É¹¦')
                 return self.error(msg)
 
-        elif code == 202:   # æ›´æ”¹åå­—
-            # åªæœ‰æœåŠ¡å™¨æ‰ä¼šä½¿ç”¨æ­¤æ–¹æ³•
+        elif code == 202:   # ¸ü¸ÄÃû×Ö
+            # Ö»ÓĞ·şÎñÆ÷²Å»áÊ¹ÓÃ´Ë·½·¨
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             succ, msg = tools.rename(data["old"], data["new"])
             if succ:
-                return self.send_data(203, 'é‡å‘½åæˆåŠŸ')
+                return self.send_data(203, 'ÖØÃüÃû³É¹¦')
             return self.error(msg)
 
-        elif code == 204:   #åˆ é™¤æœåŠ¡å™¨ç›®å½•æˆ–è€…æ–‡ä»¶
-            # åªæœ‰æœåŠ¡å™¨æ‰ä¼šä½¿ç”¨æ­¤æ–¹æ³•
+        elif code == 204:   #É¾³ı·şÎñÆ÷Ä¿Â¼»òÕßÎÄ¼ş
+            # Ö»ÓĞ·şÎñÆ÷²Å»áÊ¹ÓÃ´Ë·½·¨
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             succ, msg = tools.remove(data["abs_path"])
             if succ:
-                return self.send_data(205, 'åˆ é™¤æˆåŠŸ')
+                return self.send_data(205, 'É¾³ı³É¹¦')
             return self.error(msg)
 
-        elif code == 206:   # å®¢æˆ·ç«¯è·å–æœåŠ¡å™¨ç›®å½•
+        elif code == 206:   # ¿Í»§¶Ë»ñÈ¡·şÎñÆ÷Ä¿Â¼
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             list_dir = tools.listdir(data["dir_path"])
             self.send_data(207, data=dict(list_dir=list_dir))
 
-        elif code == 207: # æœåŠ¡å™¨è¿”å›ç›®å½•
+        elif code == 207: # ·şÎñÆ÷·µ»ØÄ¿Â¼
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             self.response_data.put(data)
 
-        elif code == 208:  # å®¢æˆ·ç«¯è·å–æœåŠ¡å™¨ç£ç›˜
+        elif code == 208:  # ¿Í»§¶Ë»ñÈ¡·şÎñÆ÷´ÅÅÌ
             disk_list = tools.get_disk()
             self.send_data(207, data=dict(disk_list=disk_list))
 
@@ -228,22 +231,22 @@ class Handler:
             data = tools.decode_dict(receive_data)
             self.response_data.put(data["disk_list"])
             disk_list = data["disk_list"]
-            print("æ”¶åˆ°æœåŠ¡å™¨ç£ç›˜åˆ—è¡¨", disk_list)
+            print("ÊÕµ½·şÎñÆ÷´ÅÅÌÁĞ±í", disk_list)
 
         elif code == 210:
             if self.local_reload:
-                print("åˆ·æ–°æœ¬åœ°æ–‡ä»¶")
+                print("Ë¢ĞÂ±¾µØÎÄ¼ş")
                 self.local_reload()
 
-        elif code == 500:   # æ”¶åˆ°å¼‚å¸¸
+        elif code == 500:   # ÊÕµ½Òì³£
             receive_data = self.base_socket.recv_agroup(next_size)
             data = tools.decode_dict(receive_data)
             if self.on_error:
                 self.on_error(data)
-            print(f"æ”¶åˆ°å¼‚å¸¸ï¼š {data}")
+            print(f"ÊÕµ½Òì³££º {data}")
 
-        elif code == 501:   # æ”¶åˆ°é€šçŸ¥
-            print(f"æ”¶åˆ°æ¶ˆæ¯ï¼š {protocol['msg']}")
+        elif code == 501:   # ÊÕµ½Í¨Öª
+            print(f"ÊÕµ½ÏûÏ¢£º {protocol['msg']}")
 
         elif code == 600:
             if self.show_progress:
@@ -262,7 +265,7 @@ class Handler:
     def send_summary(self):
         pass
 
-    # å‘é€æ–‡ä»¶
+    # ·¢ËÍÎÄ¼ş
     def send_files(self, file_list, write_to, set_progress=None):
         for file_path in file_list:
             file_name = os.path.basename(file_path)
@@ -280,11 +283,11 @@ class Handler:
                         send_group += 1
                         last_s_send_group += 1
                         b_data = fp.read(self.file_group_len)
-                        # å¦‚æœè®¾ç½®äº†å›è°ƒå‡½æ•°ï¼Œæ¯ç§’é’Ÿè°ƒç”¨å¹¶ä¸”ä¼ é€’å›è°ƒå‡½æ•°
-                        if int(time.time()) != last_s and set_progress:  # è¯´æ˜è¿‡å»äº†ä¸€ç§’
+                        # Èç¹ûÉèÖÃÁË»Øµ÷º¯Êı£¬Ã¿ÃëÖÓµ÷ÓÃ²¢ÇÒ´«µİ»Øµ÷º¯Êı
+                        if int(time.time()) != last_s and set_progress:  # ËµÃ÷¹ıÈ¥ÁËÒ»Ãë
                             QApplication.processEvents()
                             d = tools.Dict(
-                                operation="ä¼ é€ä¸­",
+                                operation="´«ËÍÖĞ",
                                 name=file_name,
                                 progress=int(send_group * self.file_group_len / bytes_size* 100),
                                 speed=tools.bytes_to_speed(last_s_send_group * self.file_group_len),
@@ -297,22 +300,22 @@ class Handler:
                             set_progress.emit(d)
 
                     else:
-                        print("scoketå¼‚å¸¸ æ–‡ä»¶å‘é€åœæ­¢ã€‚")
+                        print("scoketÒì³£ ÎÄ¼ş·¢ËÍÍ£Ö¹¡£")
                         return False
-            print("æ–‡ä»¶å‘é€å®Œæ¯•", file_name)
+            print("ÎÄ¼ş·¢ËÍÍê±Ï", file_name)
         return True
 
-    # ä¸‹è½½æ–‡ä»¶
+    # ÏÂÔØÎÄ¼ş
     def down_load_files(self, file_list, write_path):
         new_file_list = file_list.copy()
         for i in file_list:
             name = os.path.basename(i)
             if os.path.exists(os.path.join(write_path, name)):
-                print(f"{os.path.join(write_path, name)} å·²å­˜åœ¨ï¼Œè·³è¿‡...")
+                print(f"{os.path.join(write_path, name)} ÒÑ´æÔÚ£¬Ìø¹ı...")
                 new_file_list.remove(i)
-        self.send_data(101, 'ä¸‹è½½æ–‡ä»¶', dict(file_list=new_file_list, write_path=write_path))
+        self.send_data(101, 'ÏÂÔØÎÄ¼ş', dict(file_list=new_file_list, write_path=write_path))
 
-    # å‘é€æ™®é€šå¯¹è±¡æ•°æ®
+    # ·¢ËÍÆÕÍ¨¶ÔÏóÊı¾İ
     def send_data(self, code, msg='', data=None):
         b_data = tools.encode_dict(data)
         size = len(b_data) if data else int()
@@ -331,43 +334,45 @@ class Handler:
         return
 
     def os_mkdir(self, dir_path):
-        self.send_data(200, 'åˆ›å»ºç›®å½•', data=dict(dir_path=dir_path))
+        self.send_data(200, '´´½¨Ä¿Â¼', data=dict(dir_path=dir_path))
 
     def os_remove(self, abs_path):
-        self.send_data(204, 'åˆ é™¤ç›®å½•', data=dict(abs_path=abs_path))
+        self.send_data(204, 'É¾³ıÄ¿Â¼', data=dict(abs_path=abs_path))
 
     def os_rename(self, old, new):
-        self.send_data(202, 'é‡å‘½å', data=dict(old=old, new=new))
+        self.send_data(202, 'ÖØÃüÃû', data=dict(old=old, new=new))
 
     def get_dir_list(self, dir_path):
-        self.send_data(206, 'è·å–ç›®å½•', data=dict(dir_path=dir_path))
+        #self.send_data(206, '»ñÈ¡Ä¿Â¼', data=dict(dir_path=dir_path))
         #self.my_send_data('event=list\npdir=/home')
         res = self.response_data.get()
+        print('dirpath',end='')
         print(res)
+        res=['/home']
         return res["list_dir"]
     
     def get_disk_list(self):
         #disk=[]
-        self.send_data(208, 'è·å–ç£ç›˜åˆ—è¡¨')
+        self.send_data(208, '»ñÈ¡´ÅÅÌÁĞ±í')
         #disk.append('event=list\npdir=home/2\n')
         #self.send_data(208,'event=list\npdir=home/2\n')
         #self.response_data.put(disk)
         return self.response_data.get()
     
-    # åœ¨å‘é€æ•°æ®å‰é€šçŸ¥å¯¹æ–¹ç›¸å…³ä¿¡æ¯ï¼Œåšå¥½æ¥å—å‡†å¤‡
+    # ÔÚ·¢ËÍÊı¾İÇ°Í¨Öª¶Ô·½Ïà¹ØĞÅÏ¢£¬×öºÃ½ÓÊÜ×¼±¸
     def before_send(self, protocol):
         self.base_socket.send_all(self.padding(tools.encode_dict(protocol)))
 
-    # æ•°æ®è§£æ
+    # Êı¾İ½âÎö
     def decode_protocol(self, b_data):
         return json.loads(b_data.decode().replace(self.padding_char.decode(), ''))
 
-    # æ•°æ®å¯¹é½
+    # Êı¾İ¶ÔÆë
     def padding(self, bytes_data):
         bytes_data += self.padding_char * (self.protocol_len - len(bytes_data))
         return bytes_data
 
-    # æœåŠ¡å‘ç”Ÿå¼‚å¸¸ï¼Œé€šçŸ¥å®¢æˆ·ç«¯
+    # ·şÎñ·¢ÉúÒì³££¬Í¨Öª¿Í»§¶Ë
     def error(self, msg):
         self.send_data(500, msg, dict(msg=msg))
 
@@ -379,65 +384,28 @@ class Handler:
 
 
 
-    def my_send_files(self, file_list, write_to):
-        for file_path in file_list:
-            file_name = os.path.basename(file_path)
-            size, unit, bytes_size = tools.file_size(file_path)
-            with open(file_path, 'rb') as fp:
-                protocol = dict(code=100, msg='', size=os.path.getsize(file_path), write_path=os.path.join(write_to, file_name))
-                #self.before_send(protocol)
-                print(protocol)
-                flag=0
-                data = fp.read()
-                md5 = hashlib.md5(data)
-                print(md5.hexdigest())
-                # å›åˆ°å¼€å¤´
-                fp.seek(0,0)
-
-                while True:
-                    filedata = fp.read(1024)
-                    filestr = filedata.decode('utf-8', 'ignore')
-                    if not filedata:
-                        stage = 'finished'
-                        str = 'event=upload\nstage=' + stage + '\nmd5=' + md5.hexdigest() + '\npdir=' + write_to + '\nfilename=' + file_name + '\n'
-                        # print(str)
-                        self.send_data(str.encode())
-
-
-                        break
-                    if flag == 0:
-                        str = 'event=upload\nstage=' + stage + '\nmd5=' + md5.hexdigest() + '\npdir=' + write_to + '\nfilename=' + file_name + '\n'
-                        str += filestr + '\n'
-                        # print(str)
-                        self.send_data(str.encode())
-
-                        flag += 1
-                        continue
-                    else:
-                        stage = 'continue'
-                        str = 'event=upload\nstage=' + stage + '\nmd5=' + md5.hexdigest() + '\npdir=' + write_to + '\nfilename=' + file_name + '\n'
-                        str += filestr + '\n'
-                        # print(str)
-
-                        self.send_data(str.encode())
-
-            print("æ–‡ä»¶å‘é€å®Œæ¯•", file_name)
-        return True
 
 
     def my_send_data(self, msg):
-        b_data = tools.encode(msg)
-        size = len(b_data) if msg else int()
-        #protocol = dict(code=code, msg=msg, size=size)
-
-        ''' print(protocol)
-        print('\n')
-        print(data)
-        print('\n')
-        print(b_data)
-        print('\n')'''
-        print(msg)
-        #self.before_send(protocol)
+        #print(msg)
+        #b_data = msg.encode()
+        #print(b_data)
         if msg:
-            self.base_socket.send_all(b_data)
-        return
+            self.base_socket.send_all(msg)
+
+    def my_get_dir_list(self, dir_path):
+
+        self.my_send_data('event=list\n'+'pdir='+dir_path+'\n')
+
+        res = self.response_data.get()
+        #print(res)
+        return res["list_dir"]
+
+    '''def my_get_disk_list(self):
+        # disk=[]
+        #self.send_data(208, '»ñÈ¡´ÅÅÌÁĞ±í')
+        # disk.append('event=list\npdir=home/2\n')
+        # self.send_data(208,'event=list\npdir=home/2\n')
+        # self.response_data.put(disk)
+        self.my_get_dir_list('/home')
+        return self.response_data.get()'''

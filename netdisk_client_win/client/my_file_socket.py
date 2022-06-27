@@ -5,7 +5,9 @@ import time
 import queue
 import threading
 import hashlib
-from PyQt5.Qt import QApplication
+#from PyQt5.Qt import QApplication
+from PyQt5.QtWidgets import QApplication
+
 import tools
 from base_socket import BaseSocket
 import json
