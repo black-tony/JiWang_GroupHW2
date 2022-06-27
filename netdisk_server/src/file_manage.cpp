@@ -626,7 +626,7 @@ int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     return mvdir(mysql, msg, account, pdir, name, dst);
 }
 
-int handle_download(char *buf, int rn, MYSQL *(&mysql), string &msg, char *sd, int size) {
+int handle_download(char *buf, int rn, MYSQL *(&mysql), string &msg, char *sd, int &size) {
     int i = 0;
     string account, pdir, name, pos;
     for (; i < rn && buf[i] != '\n'; ++i) {
@@ -648,14 +648,16 @@ int handle_download(char *buf, int rn, MYSQL *(&mysql), string &msg, char *sd, i
         msg = "format error\n";
         return FAILED;
     }
-    account = account.substr(0, 8);
-    pdir = pdir.substr(0, 5);
-    name = name.substr(0, 5);
-    pos = pos.substr(0, 4);
+    account = account.substr(8);
+    pdir = pdir.substr(5);
+    name = name.substr(5);
+    pos = pos.substr(4);
     MYSQL_RES *res;
     MYSQL_ROW row;
     string command = "select * from storage where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
-    mysql_query(mysql, command.c_str());
+    if (mysql_query(mysql, command.c_str())) {
+        cerr << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
+    }
     res = mysql_store_result(mysql);
     if ((row = mysql_fetch_row(res)) != NULL) {
         string md5 = row[4];
@@ -663,14 +665,16 @@ int handle_download(char *buf, int rn, MYSQL *(&mysql), string &msg, char *sd, i
         fin.seekg(stoll(pos), ios::beg);
         fin.read(sd, 4096);
         size = fin.gcount();
+        //cout << size << endl;
         if (size < 4096) {
             logger("用户" + account + "文件" + pdir + name + "下载完成");
             msg = "download completed\n";
+            return COMPLETE;
         }
         else {
             msg = "downloading\n";
+            return ACCEPT;
         }
-        return ACCEPT;
     }
     msg = "download error\n";
     return FAILED;

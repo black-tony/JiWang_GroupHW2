@@ -11,7 +11,7 @@ int handle_mkdir(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_rmdir(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_mvdir(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_cpdir(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
-int handle_download(char *buf, int rn, MYSQL *(&mysql), std::string &msg, char *sd, int size);
+int handle_download(char *buf, int rn, MYSQL *(&mysql), std::string &msg, char *sd, int &size);
 int handle_rename(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_copyensure(char *buf, int rn, MYSQL *(&mysql), std::string &msg);
 int handle_moveensure(char *buf, int rn, MYSQL *(&mysql), std::string &msg);

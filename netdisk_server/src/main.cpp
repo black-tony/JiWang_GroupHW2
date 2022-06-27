@@ -55,12 +55,11 @@ int connect_mysql(MYSQL*(&mysql), const string &db_name) {
     return 0;
 }
 
-int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep) {
+int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep, int &size) {
     string event;
     string msg;
     int ret = FAILED;
     char sd[5000];
-    int size;
     for (int i = 0; i < rn && buf[i] != '\n'; ++i) {
         event += buf[i];
     }
@@ -125,7 +124,12 @@ int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep) {
     strcpy(rep, exceptions[ret]);
     strcat(rep, msg.c_str());
     if(event == "download") {
-        memcpy(rep + int(msg.size()), sd, size);
+        int len = strlen(rep);
+        memcpy(rep + len, sd, size);
+        size += len;
+    }
+    else {
+        size = strlen(rep);
     }
     return 0;    
 }
@@ -162,9 +166,10 @@ int handle_recv(int client_fd, int epoll_fd, vector<Client> &clients, MYSQL *(&m
     }
     else {
         char rep[5000];
+        int size = 0;
         memset(rep, 0, sizeof(rep));
-        event_parse(buf, rn, mysql, clients[i], rep);
-        send(client_fd, rep, strlen(rep), 0);
+        event_parse(buf, rn, mysql, clients[i], rep, size);
+        send(client_fd, rep, size, 0);
     }
     return 0;
 }
