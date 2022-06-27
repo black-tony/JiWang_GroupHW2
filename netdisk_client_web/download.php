@@ -9,7 +9,7 @@ if (strcmp($_POST['pdir'], $_SESSION['pdir'])) {
 }
 session_write_close();
 
-header('Content-type:text/html;charset=gb18030');
+// header('Content-type:text/html;charset=gb18030');
 //打开数据库
 $mysqli=new mysqli('localhost','root','root123','netdisk');
 if (mysqli_connect_errno()){

@@ -80,6 +80,11 @@ function download(name) {
 
 function rename_file(name) {
     var newname = prompt("请输入新名称");
+    if(file_and_dir[newname] == 'f')
+    {
+        alert("已有重复文件!请改名后上传!\n如果重复文件已被删除, 请刷新页面!")
+        return false
+    }
     var pdir = document.getElementById("pdir").innerHTML;
     var event = "event=rename&type=f&account=" + account +"&pdir=" + pdir + "&name=" + name + "&newname=" + newname;
     var xhr = new XMLHttpRequest();
@@ -88,7 +93,7 @@ function rename_file(name) {
     xhr.onreadystatechange = function() {
         // 检查请求是否成功
         if(this.readyState === 4 && this.status === 200) {
-            //console.log(this.responseText);
+            console.log(this.responseText);
             GetList();
         }
     };
@@ -97,6 +102,11 @@ function rename_file(name) {
 
 function rename_dir(name) {
     var newname = prompt("请输入新名称");
+    if(file_and_dir[newname] == 'd')
+    {
+        alert("已有重复文件夹!请改名后上传!\n如果重复文件已被删除, 请刷新页面!")
+        return false
+    }
     var pdir = document.getElementById("pdir").innerHTML;
     var event = "event=rename&type=d&account=" + account +"&pdir=" + pdir + "&name=" + name + "&newname=" + newname;
     var xhr = new XMLHttpRequest();
@@ -105,6 +115,7 @@ function rename_dir(name) {
     xhr.onreadystatechange = function() {
         // 检查请求是否成功
         if(this.readyState === 4 && this.status === 200) {
+            console.log(this.responseText);
             GetList();
         }
     };
@@ -243,6 +254,8 @@ function GetList() {
 
 function init(){
     document.getElementById("file").onchange = function(e) {
+        if(e.target.files.length <= 0)
+            return;
         const file = e.target.files[0];
         const sliceLength = 10;
         const chunkSize = Math.ceil(file.size / sliceLength);
@@ -286,6 +299,11 @@ function Move(name) {
 
 function mkdir() {
     var name = prompt("请输入新建文件夹名");
+    if(file_and_dir[name] == 'd')
+    {
+        alert("已有重复文件夹!请改名后上传!\n如果重复文件已被删除, 请刷新页面!")
+        return false
+    }
     var pdir = document.getElementById("pdir").innerHTML;
     var event = "event=mkdir&account=" + account +"&pdir=" + pdir + "&name=" + name;
     var xhr = new XMLHttpRequest();
@@ -305,9 +323,10 @@ function mkdir() {
 
 function refreshUploader(file)
 {
-    var file2 = file.cloneNode(false);          //false表示只有自身，true表示自身及所有子节点
-    file2.onchange = file.onchange;             //复制时，注册的监听器函数不被复制，因此要人工赋值
-    file.parentNode.replaceChild(file2, file);  //在父节点上替换（原来的是否被释放？）
+    file.outerHTML = file.outerHTML;
+    // var file2 = file.cloneNode(false);          //false表示只有自身，true表示自身及所有子节点
+    // file2.onchange = file.onchange;             //复制时，注册的监听器函数不被复制，因此要人工赋值
+    // file.parentNode.replaceChild(file2, file);  //在父节点上替换（原来的是否被释放？）
 }
 
 function Upload()
@@ -319,9 +338,15 @@ function Upload()
         alert('请选择要上传的文件!');
         return false;
     }
+    if(file_and_dir[file_input.files[0].name] == 'f')
+    {
+        alert("已有重复文件!请更改文件名后上传!\n如果重复文件已被删除, 请刷新页面!")
+        return false
+    }
     console.log('用户选择了待上传的文件');
     var md5_sum_fd = new FormData();
     md5_sum_fd.append("md5sum", document.getElementById("file_md5").value);
+    md5_sum_fd.append("filename", file_input.files[0].name);
     var xhr_md5 = new XMLHttpRequest()
     xhr_md5.onreadystatechange = function() {
         if(xhr_md5.readyState === 4 && xhr_md5.status === 200) {
@@ -333,14 +358,17 @@ function Upload()
                 tmp.style = 'width:'+ "100" +'%';
                 tmp.innerHTML = "100" +'%';
                 tmp.className = 'progress-bar progress-bar-success'
+                refreshUploader(file_input);
+                GetList();
                 alert("完成秒传!")
+                
+                
             }
             else 
             {
                 Upload_True();
             }
-            GetList();
-            refreshUploader(file_input);
+            
             // console.log(this.responseText);
             // if(data.status === 200) {
             //     document.querySelector('#img').src = 'http://www.liulongbin.top:3006' + data.url
@@ -349,7 +377,7 @@ function Upload()
             // }
         }
     }
-    xhr_md5.open('POST',"./upload.php", true)
+    xhr_md5.open('POST',"./upload.php", false)
     xhr_md5.send(md5_sum_fd)
 }
 
@@ -367,7 +395,8 @@ function Upload_True(){
     fd.append('file',file_input.files[0])
     fd.append("event", "True_upload")
     // fd.append("test", "TESTIE")
-    // console.log(fd.get("filename"))
+    console.log(fd.get("file"))
+    console.log(fd.get("event"))
 
     var xhr = new XMLHttpRequest()
     
@@ -398,8 +427,10 @@ function Upload_True(){
     xhr.onreadystatechange = function() {
         if(xhr.readyState === 4 && xhr.status === 200) {
             // var data = JSON.parse(xhr.responseText)
+            console.log(this.responseText);
+            refreshUploader(file_input);
+            GetList();
             alert(this.responseText)
-            // console.log(this.responseText);
             // if(data.status === 200) {
             //     document.querySelector('#img').src = 'http://www.liulongbin.top:3006' + data.url
             // } else {

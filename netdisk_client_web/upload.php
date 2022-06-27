@@ -1,7 +1,7 @@
 <?php
 header("content-type:text/html; charset=gbk");
 $buf;
-function update_info($md5_sum)
+function update_info($md5_sum, $filename)
 {
     $host="localhost";
     $port=4000;
@@ -17,7 +17,7 @@ function update_info($md5_sum)
     else {
         session_start();
         $account=$_SESSION['account'];
-        $event="event=upload\naccount=".$account."\nstage=finished\nmd5=".$md5_sum."\npdir=".$_SESSION["pdir"]."\nfilename=".$_FILES["file"]["name"]."\n";
+        $event="event=upload\naccount=".$account."\nstage=finished\nmd5=".$md5_sum."\npdir=".$_SESSION["pdir"]."\nfilename=".$filename."\n";
         session_write_close();
         socket_send($socket, $event, strlen($event), 0);
         socket_recv($socket, $buf, 4096, 0);
@@ -32,7 +32,7 @@ if(isset($_POST['md5sum']))
     $md5 = $_POST['md5sum'];
     if (file_exists("/usr/netdisk-file/".$md5))
     {
-        if(update_info($md5) == 0)
+        if(update_info($md5, $_POST['filename']) == 0)
         {
             echo "0";
         }
@@ -52,15 +52,27 @@ else if(isset($_POST['event']))
         }
         else 
         {
+            if(!is_uploaded_file($_FILES["file"]["tmp_name"]))
+            {
+                echo "不是上传的文件!";
+            }
+
             $md5 = md5_file($_FILES["file"]["tmp_name"]);
             // echo $md5;
             if (!file_exists("/usr/netdisk-file/".$md5))
             {
-                move_uploaded_file($_FILES["file"]["tmp_name"], "/usr/netdisk-file/".$md5);
-                if(update_info($md5) == 0)
+                if(!move_uploaded_file($_FILES["file"]["tmp_name"], "/usr/netdisk-file/".$md5))
                 {
-                    echo "上传成功!";
+                    echo "无法将".$_FILES["file"]["tmp_name"]."移动到"."/usr/netdisk-file/".$md5;
                 }
+                else
+                {
+                    if(update_info($md5, $_FILES["file"]["name"]) == 0)
+                    {
+                        echo "上传成功!";
+                    }
+                }
+                
             }
             else 
             {
@@ -82,6 +94,8 @@ else if(isset($_POST['event']))
 }
 else 
 {
+    print_r($_FILES);
+    print_r($_POST);
     echo "你是怎么到这里来的?_UPLOAD_FAIL";
 }
 //print_r($_FILES);
