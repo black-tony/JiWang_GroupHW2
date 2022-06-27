@@ -1,6 +1,6 @@
 <?php 
-
-$host="192.168.80.230";
+header("content-type:text/html; charset=gbk");
+$host="localhost";
 $port=4000;
 // create a socket
 $socket=socket_create(AF_INET, SOCK_STREAM, 0) or die("Could not create a socket\n");
@@ -25,6 +25,7 @@ else {
         header("location:./index.html");
     }
     else {
+
         echo "<script>alert(\"用户名或密码错误!\");histroy.back()</script>";
         exit;
     }

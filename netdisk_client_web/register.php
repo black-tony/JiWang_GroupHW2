@@ -1,4 +1,5 @@
 <?php
+header("content-type:text/html; charset=gbk");
 $passwd=$_POST["passwd"];
 $len = strlen($passwd);
 $upper = false;
@@ -25,7 +26,7 @@ if ($cnt >= 3 && $len >= 12) {
     exit;
 }
 
-$host="192.168.80.230";
+$host="localhost";
 $port=4000;
 // create a socket
 $socket=socket_create(AF_INET, SOCK_STREAM, 0) or die("Could not create a socket\n");

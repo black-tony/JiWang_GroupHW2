@@ -1,6 +1,7 @@
 <?php
+header("content-type:text/html; charset=gbk");
 session_start();
-$host="192.168.80.230";
+$host="localhost";
 $port=4000;
 $account=$_SESSION['account'];
 if (strcmp($_POST['pdir'], $_SESSION['pdir'])) {

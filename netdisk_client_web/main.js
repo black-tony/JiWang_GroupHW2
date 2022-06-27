@@ -2,7 +2,7 @@ var account;
 var sel_name = "";
 var sel_pdir = "";
 var sel_type = "";
-
+var file_and_dir = {};
 function GetAccount() {
     var event = "event = getaccount";
     var xhr = new XMLHttpRequest();
@@ -145,6 +145,7 @@ function remove_file(name) {
 
 
 function GetList() {
+    file_and_dir = [];
     var pdir = document.getElementById("pdir").innerHTML;
     var event = "event=list&account=" + account + "&pdir=" + pdir;
     var xhr = new XMLHttpRequest();
@@ -221,6 +222,7 @@ function GetList() {
                 subdiv.appendChild(icon);
                 div.appendChild(subdiv);
                 subdiv.innerHTML += name;
+                file_and_dir[name] = list[i][0];
                 if (list[i][0] == 'd') {
                     subdiv.appendChild(but);
                     subdiv.appendChild(rename_but);
@@ -240,6 +242,30 @@ function GetList() {
 }
 
 function init(){
+    document.getElementById("file").onchange = function(e) {
+        const file = e.target.files[0];
+        const sliceLength = 10;
+        const chunkSize = Math.ceil(file.size / sliceLength);
+        const fileReader = new FileReader();
+        const md5 = new SparkMD5();
+        let index = 0;
+        const loadFile = function(){
+            const slice = file.slice(index, index + chunkSize);
+            fileReader.readAsBinaryString(slice);
+        }
+        loadFile();
+        fileReader.onload =function(e) {
+            md5.appendBinary(e.target.result);
+            if (index < file.size) {
+                index += chunkSize;
+                loadFile();
+            } else {
+                var md5_ans = md5.end();
+                console.log(md5_ans);
+                document.getElementById("file_md5").value=md5_ans;
+            }
+        };
+    };
     GetAccount();
     GetList();
 }
@@ -275,4 +301,120 @@ function mkdir() {
     };
     
     xhr.send(encodeURI(event));
+}
+
+function refreshUploader(file)
+{
+    var file2 = file.cloneNode(false);          //false表示只有自身，true表示自身及所有子节点
+    file2.onchange = file.onchange;             //复制时，注册的监听器函数不被复制，因此要人工赋值
+    file.parentNode.replaceChild(file2, file);  //在父节点上替换（原来的是否被释放？）
+}
+
+function Upload()
+{
+    // var files = document.getElementById('file_form');
+    var file_input = document.getElementById('file');
+    if(file_input.files.length <= 0 ) 
+    {
+        alert('请选择要上传的文件!');
+        return false;
+    }
+    console.log('用户选择了待上传的文件');
+    var md5_sum_fd = new FormData();
+    md5_sum_fd.append("md5sum", document.getElementById("file_md5").value);
+    var xhr_md5 = new XMLHttpRequest()
+    xhr_md5.onreadystatechange = function() {
+        if(xhr_md5.readyState === 4 && xhr_md5.status === 200) {
+            // var data = JSON.parse(xhr_md5.responseText)
+            console.log(this.responseText)
+            if (this.responseText == "0")
+            {
+                var tmp = document.getElementById('percent');
+                tmp.style = 'width:'+ "100" +'%';
+                tmp.innerHTML = "100" +'%';
+                tmp.className = 'progress-bar progress-bar-success'
+                alert("完成秒传!")
+            }
+            else 
+            {
+                Upload_True();
+            }
+            GetList();
+            refreshUploader(file_input);
+            // console.log(this.responseText);
+            // if(data.status === 200) {
+            //     document.querySelector('#img').src = 'http://www.liulongbin.top:3006' + data.url
+            // } else {
+            //     console.log(data.message);
+            // }
+        }
+    }
+    xhr_md5.open('POST',"./upload.php", true)
+    xhr_md5.send(md5_sum_fd)
+}
+
+function Upload_True(){
+    var file_input = document.getElementById('file');
+    if(file_input.files.length <= 0 ) 
+    {
+        alert('进入到不应该进入的片段!');
+        return false;
+    }
+    console.log('未检测到对应的MD5文件, 开始正式上传');
+    var fd = new FormData()
+
+    // 将用户选择的文件添加到fd中
+    fd.append('file',file_input.files[0])
+    fd.append("event", "True_upload")
+    // fd.append("test", "TESTIE")
+    // console.log(fd.get("filename"))
+
+    var xhr = new XMLHttpRequest()
+    
+
+    // 监听文件上传进度
+    xhr.upload.onprogress = function(event) {
+        // event.lengthComputable是一个布尔值 表示当前上传的长度是否具有可计算的长度
+        if(event.lengthComputable) {
+            // event.loaded：已传输的字节 
+            // event.total：总传输的字节
+            // Math.ceil((e.loaded/total) * 100) 已传输的字节/总传输的字节*100获得百分比再由Math.ceil()取整
+            var procentComplete = Math.ceil((event.loaded/event.total) * 100)
+            console.log(procentComplete);
+            // 计算进度条的百分比 修改进度条的html
+            // $(selector).attr(attribute,value): 设置属性和值
+            var test = document.getElementById('percent');
+            test.style = 'width:'+ procentComplete +'%';
+            test.innerHTML = procentComplete +'%';
+        }
+    }
+        
+        // 监听上传完成的事件
+    xhr.upload.onload = function(){
+        // 修改进度条颜色：移除当前类名，添加新类名
+        var tmp = document.getElementById('percent');
+        tmp.className = 'progress-bar progress-bar-success'
+    }
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === 4 && xhr.status === 200) {
+            // var data = JSON.parse(xhr.responseText)
+            alert(this.responseText)
+            // console.log(this.responseText);
+            // if(data.status === 200) {
+            //     document.querySelector('#img').src = 'http://www.liulongbin.top:3006' + data.url
+            // } else {
+            //     console.log(data.message);
+            // }
+        }
+    }
+    xhr.open('POST',"./upload.php", true)
+
+    // xhr.setRequestHeader("Content-type", "multipart/form-data");
+    // 调用open函数 指定类型与URL地址
+    // alert("即将发起请求")
+
+    // 发起请求
+    xhr.send(fd)
+
+    // 监听onreadystatechange事件
 }
