@@ -239,7 +239,7 @@ class MainWindow(Base, Ui_Form, QWidget):
                                               get_listdir=list_dir,
                                               curpath=self.get_local_path,
                                               comboBox=self.LocalComboBox
-                                              ))
+                                              ) ,ctype=0)
         # （上一级）
         self.LocalLastDir.clicked.connect(lambda: self.go_back(self.fmt_pack(self.LocalComboBox,
                                                                              listdir=list_dir,
@@ -293,11 +293,11 @@ class MainWindow(Base, Ui_Form, QWidget):
         self.add_item_on_file_table(self.fmt_pack(self.RemoteFiles, listdir=list_dir()))
 
         # 添加表格双击事件(下一级)
-        '''self.bind_doubleClicked(self.fmt_pack(self.RemoteFiles,
+        self.bind_doubleClicked(self.fmt_pack(self.RemoteFiles,
                                               get_listdir=list_dir,
                                               curpath=self.get_remote_path,
                                               comboBox=self.RemoteComboBox
-                                              ))'''
+                                              ),ctype=1)
         # (上一级)
         self.RemoteLastDir.clicked.connect(lambda: self.go_back(self.fmt_pack(self.RemoteComboBox,
                                                                               listdir=list_dir,
@@ -309,6 +309,7 @@ class MainWindow(Base, Ui_Form, QWidget):
                            删除=self.remote_remove,
                            新建文件夹=self.remote_mkdir,
                            重命名=self.remote_rename)
+
         get_local_path = lambda: self.get_comboBox_first_item(self.fmt_pack(self.LocalComboBox))
         get_remote_path = lambda: self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
         data = self.fmt_pack(self.RemoteFiles, menu=button_func, get_local_path=get_local_path,
@@ -316,8 +317,8 @@ class MainWindow(Base, Ui_Form, QWidget):
         # 将菜单绑定到指定对象上
         self.table_add_right_key_menu(data)
 
-    def bind_doubleClicked(self, package):
-        package.widget.doubleClicked.connect(lambda x: self._to_next_node(x, package))
+    def bind_doubleClicked(self, package,ctype):
+        package.widget.doubleClicked.connect(lambda x: self._to_next_node(x, package,ctype))
 
     @classmethod
     def bind_comboBox_change_event(cls, package):
@@ -561,18 +562,23 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     # ==========================远程与本地的文件表格公用方法=======================================+#
 
-    def _to_next_node(self, evt, package):
+    def _to_next_node(self, evt, package,ctype):
         f_widget = package.widget
         file_type = f_widget.item(f_widget.currentRow(), 2).text()
         click_name = f_widget.item(f_widget.currentRow(), 0).text()
         cur_path = package.data.curpath()
         next_path = os.path.join(cur_path, click_name)
         if file_type == "File Folder" or file_type == "Folder":
-            next_path = os.path.join(cur_path, click_name + "/")
-            self.set_comboBox_text(self.fmt_pack(package.data.comboBox, text=next_path))
-            package.data.listdir = package.data.get_listdir()
-            self.clear_table_files(package)
-            self.add_item_on_file_table(package)
+            if not ctype:
+                next_path = os.path.join(cur_path, click_name + "/")
+                self.set_comboBox_text(self.fmt_pack(package.data.comboBox, text=next_path))
+                package.data.listdir = package.data.get_listdir()
+                self.clear_table_files(package)
+                self.add_item_on_file_table(package)
+            else:
+                self.remote_table_func.my_send_dir_list(next_path)
+                self.set_comboBox_text(self.fmt_pack(package.data.comboBox, text=next_path))
+
         else:
             if "Local" in f_widget.objectName():
                 print("打开%s" % next_path)
@@ -610,6 +616,7 @@ class MainWindow(Base, Ui_Form, QWidget):
             abs_path = os.path.join(package.data.local_path, package.data.text)
             if package.data.mkdir:
                 status, msg = self.local_table_func.mkdir(abs_path)
+
                 if status is not True:
                     print(msg)
                 else:
@@ -628,8 +635,8 @@ class MainWindow(Base, Ui_Form, QWidget):
             if package.data.mkdir:
                 #self.remote_table_func.os_mkdir(abs_path)
                 #@@@@@
-
-                mkdir_msg = 'event=mkdir\naccount=' + self.account + '\npdir=' +abs_path+ '\nname='+package.data.text + '\n'
+                dir_path=self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
+                mkdir_msg = 'event=mkdir\naccount=' + self.account + '\npdir=' +dir_path+ '\nname='+package.data.text + '\n'
                 self.remote_table_func.my_send_data(mkdir_msg.encode('gbk'))
 
                 #self.remote_table_func.my_send_data()

@@ -340,7 +340,7 @@ class my_Handler:
         if msg_data:
             self.base_socket.send_all(msg_data)
 
-    def my_send_dir_list(self, account,dir_path):
+    def my_send_dir_list(self,dir_path):
 
         list_msg='event=list\naccount='+self.account+'\n' + 'pdir=' + dir_path + '\n'
         self.my_send_data(list_msg.encode('gbk'))
@@ -379,7 +379,7 @@ class my_Handler:
 
 
 
-    def my_get_disk_list(self):
+    def my_get_disk_list(self):  #初始化获得路径 即每一个用户都是/
         # disk=[]
         # self.send_data(208, '获取磁盘列表')
         # disk.append('event=list\npdir=home/2\n')
