@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: cp936 -*-
 
 # Form implementation generated from reading ui file 'login.ui'
 #
@@ -17,6 +17,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 import tools as local_handler
 from module import MainWindow, InputWindow, ProgressWindow
 from file_socket import Handler, FileIO
+from my_file_socket import my_Handler, my_FileIO
 from base_socket import BaseSocket
 import sys
 import socket
@@ -39,13 +40,13 @@ class Ui_Dialog(object):
         Dialog.setObjectName("Dialog")
         Dialog.resize(811, 559)
 
-        #å·¦åŠèƒŒæ™¯
+        #×ó°ë±³¾°
         self.label = QtWidgets.QLabel(Dialog)
         self.label.setGeometry(QtCore.QRect(90, 100, 231, 341))
         self.label.setStyleSheet("background-color: rgb(228, 255, 246);")
         self.label.setText("")
         self.label.setObjectName("label")
-        #å³åŠèƒŒæ™¯
+        #ÓÒ°ë±³¾°
         self.label_2 = QtWidgets.QLabel(Dialog)
         self.label_2.setGeometry(QtCore.QRect(300, 100, 431, 341))
         self.label_2.setStyleSheet("background-image: url(:/images/2.jpg);")
@@ -54,12 +55,12 @@ class Ui_Dialog(object):
         self.label_3 = QtWidgets.QLabel(Dialog)
         self.label_3.setGeometry(QtCore.QRect(120, 160, 151, 51))
 
-        #æ¬¢è¿å…‰ä¸´
+        #»¶Ó­¹âÁÙ
         font = QtGui.QFont()
-        font.setFamily("å¹¼åœ†")
+        font.setFamily("Ó×Ô²")
         font.setPointSize(20)
 
-        #å¸å·å¯†ç çº¿
+        #ÕÊºÅÃÜÂëÏß
         self.label_3.setFont(font)
         self.label_3.setObjectName("label_3")
         self.lineEdit = QtWidgets.QLineEdit(Dialog)
@@ -90,30 +91,30 @@ class Ui_Dialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.label_2.setText(_translate("Dialog", "TextLabel"))
-        self.label_3.setText(_translate("Dialog", "æ¬¢è¿ç™»å½•"))
-        self.lineEdit.setPlaceholderText(_translate("Dialog", "è´¦å·ï¼š"))
-        self.lineEdit_2.setPlaceholderText(_translate("Dialog", "å¯†ç ï¼š"))
+        self.label_3.setText(_translate("Dialog", "»¶Ó­µÇÂ¼"))
+        self.lineEdit.setPlaceholderText(_translate("Dialog", "ÕËºÅ£º"))
+        self.lineEdit_2.setPlaceholderText(_translate("Dialog", "ÃÜÂë£º"))
 
-        self.pushButton.setText(_translate("Dialog", "ç¡®å®š"))
-        self.pushButton_2.setText(_translate("Dialog", "æ³¨å†Œ"))
+        self.pushButton.setText(_translate("Dialog", "È·¶¨"))
+        self.pushButton_2.setText(_translate("Dialog", "×¢²á"))
 import res_rc
 '''
 class login_Thread(QThread):
-    #è‡ªå®šä¹‰ä¿¡å·å£°æ˜
-    # ä½¿ç”¨è‡ªå®šä¹‰ä¿¡å·å’ŒUIä¸»çº¿ç¨‹é€šè®¯ï¼Œå‚æ•°æ˜¯å‘é€ä¿¡å·æ—¶é™„å¸¦å‚æ•°çš„æ•°æ®ç±»å‹ï¼Œå¯ä»¥æ˜¯strã€intã€listç­‰
+    #×Ô¶¨ÒåĞÅºÅÉùÃ÷
+    # Ê¹ÓÃ×Ô¶¨ÒåĞÅºÅºÍUIÖ÷Ïß³ÌÍ¨Ñ¶£¬²ÎÊıÊÇ·¢ËÍĞÅºÅÊ±¸½´ø²ÎÊıµÄÊı¾İÀàĞÍ£¬¿ÉÒÔÊÇstr¡¢int¡¢listµÈ
     finishSignal = pyqtSignal(int)
 
-    # å¸¦ä¸€ä¸ªå‚æ•°t
+    # ´øÒ»¸ö²ÎÊıt
     def __init__(self, t,parent=None):
         super(login_Thread, self).__init__(parent)
 
         self.t = t
-    #runå‡½æ•°æ˜¯å­çº¿ç¨‹ä¸­çš„æ“ä½œï¼Œçº¿ç¨‹å¯åŠ¨åå¼€å§‹æ‰§è¡Œ
+    #runº¯ÊıÊÇ×ÓÏß³ÌÖĞµÄ²Ù×÷£¬Ïß³ÌÆô¶¯ºó¿ªÊ¼Ö´ĞĞ
     def run(self):
         for i in range(self.t):
             time.sleep(1)
-            #å‘å°„è‡ªå®šä¹‰ä¿¡å·
-            #é€šè¿‡emitå‡½æ•°å°†å‚æ•°iä¼ é€’ç»™ä¸»çº¿ç¨‹ï¼Œè§¦å‘è‡ªå®šä¹‰ä¿¡å·
+            #·¢Éä×Ô¶¨ÒåĞÅºÅ
+            #Í¨¹ıemitº¯Êı½«²ÎÊıi´«µİ¸øÖ÷Ïß³Ì£¬´¥·¢×Ô¶¨ÒåĞÅºÅ
             self.finishSignal.emit(str(i))
 
 
@@ -123,7 +124,7 @@ def create_socket(addr, protocol_len):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.connect(addr)
-    print(f"ä¸ {addr} è¿æ¥æˆåŠŸ")
+    print(f"Óë {addr} Á¬½Ó³É¹¦")
     return BaseSocket(s, addr, protocol_len)
 
 
@@ -131,25 +132,21 @@ def create_socket(addr, protocol_len):
 
 
 '''
-    app = QtWidgets.QApplication(sys.argv)  # åˆ›å»ºä¸€ä¸ªQApplicationï¼Œä¹Ÿå°±æ˜¯ä½ è¦å¼€å‘çš„è½¯ä»¶app
-    MainWindow = QtWidgets.QMainWindow()    # åˆ›å»ºä¸€ä¸ªQMainWindowï¼Œç”¨æ¥è£…è½½ä½ éœ€è¦çš„å„ç§ç»„ä»¶ã€æ§ä»¶
-    ui = Ui_Dialog()                    # uiæ˜¯Ui_MainWindow()ç±»çš„å®ä¾‹åŒ–å¯¹è±¡
-    ui.setupUi(MainWindow)                  # æ‰§è¡Œç±»ä¸­çš„setupUiæ–¹æ³•ï¼Œæ–¹æ³•çš„å‚æ•°æ˜¯ç¬¬äºŒæ­¥ä¸­åˆ›å»ºçš„QMainWindow
-    MainWindow.show()                       # æ‰§è¡ŒQMainWindowçš„show()æ–¹æ³•ï¼Œæ˜¾ç¤ºè¿™ä¸ªQMainWindow
-    sys.exit(app.exec_())                   # ä½¿ç”¨exit()æˆ–è€…ç‚¹å‡»å…³é—­æŒ‰é’®é€€å‡ºQApplication///
+    app = QtWidgets.QApplication(sys.argv)  # ´´½¨Ò»¸öQApplication£¬Ò²¾ÍÊÇÄãÒª¿ª·¢µÄÈí¼şapp
+    MainWindow = QtWidgets.QMainWindow()    # ´´½¨Ò»¸öQMainWindow£¬ÓÃÀ´×°ÔØÄãĞèÒªµÄ¸÷ÖÖ×é¼ş¡¢¿Ø¼ş
+    ui = Ui_Dialog()                    # uiÊÇUi_MainWindow()ÀàµÄÊµÀı»¯¶ÔÏó
+    ui.setupUi(MainWindow)                  # Ö´ĞĞÀàÖĞµÄsetupUi·½·¨£¬·½·¨µÄ²ÎÊıÊÇµÚ¶ş²½ÖĞ´´½¨µÄQMainWindow
+    MainWindow.show()                       # Ö´ĞĞQMainWindowµÄshow()·½·¨£¬ÏÔÊ¾Õâ¸öQMainWindow
+    sys.exit(app.exec_())                   # Ê¹ÓÃexit()»òÕßµã»÷¹Ø±Õ°´Å¥ÍË³öQApplication///
     '''
-
-
-class lr_button:
-
-    def on_pushButton_register_clicked1(self):
-        account1 = self.re_user.text()
-        password1 = self.re_passwd.text()
-        return 'event=login\naccount='+account1+'\npasswd='+password1+'\n'   #æš‚å®š
 
 
 if __name__ == "__main__":
 
+    global account
+    global password
+    global isLogin
+    global isRegister
 
     app = QtWidgets.QApplication(sys.argv)
     #app = QApplication(sys.argv)
@@ -166,9 +163,9 @@ if __name__ == "__main__":
     global my_isRegister
     my_isRegister=0
     class LoginWindow(QtWidgets.QMainWindow, login_Ui):
-       switch_window1 = QtCore.pyqtSignal()  # è·³è½¬ä¿¡å·
-       switch_window2 = QtCore.pyqtSignal()  # è·³è½¬ä¿¡å·
-       # ä¿¡å·æ§½æœºåˆ¶ï¼šè®¾ç½®ä¸€ä¸ªä¿¡å·ï¼Œç”¨äºè§¦å‘æ¥æ”¶åŒºå†™å…¥åŠ¨ä½œ
+       switch_window1 = QtCore.pyqtSignal()  # Ìø×ªĞÅºÅ
+       switch_window2 = QtCore.pyqtSignal()  # Ìø×ªĞÅºÅ
+       # ĞÅºÅ²Û»úÖÆ£ºÉèÖÃÒ»¸öĞÅºÅ£¬ÓÃÓÚ´¥·¢½ÓÊÕÇøĞ´Èë¶¯×÷
        signal_write_msg = QtCore.pyqtSignal(str)
 
        def __init__(self):
@@ -193,22 +190,37 @@ if __name__ == "__main__":
        def on_pushButton_login_clicked1(self):
            # self.socket_open_tcpc()
 
-            account1 = self.user.text()
-            password1 = self.passwd.text()
+            global account
+            global password
+            global isLogin
+
+            isLogin=0
+            account = self.user.text()
+            password = self.passwd.text()
             test_str = ''
-            if account1 != '' and password1 != '':
-                test_str = 'event=login\naccount=' + account1 + '\npasswd=' + password1 + '\n'  # æš‚å®š
+            if account != '' and password != '':
+                test_str = 'event=login\naccount=' + account + '\npasswd=' + password + '\n'  # Ôİ¶¨
             else:
                 test_str=''
-                reply = QMessageBox.warning(self, "è­¦å‘Š", "è´¦å·å¯†ç ä¸èƒ½ä¸ºç©ºï¼Œè¯·è¾“å…¥ï¼")
+                #QMessageBox.warning(self, "¾¯¸æ", "ÕËºÅÃÜÂë²»ÄÜÎª¿Õ£¬ÇëÊäÈë£¡")
+                #reply
                 return
             s.send(test_str.encode())
 
+            str = s.recv(1024)
+            if 'accepted' in str.decode():
+                isLogin = 1
+                print(isLogin)
+                #QMessageBox.warning(self, "¹§Ï²", "µÇÂ¼³É¹¦")
+            else:
+                isLogin = 0
+                #QMessageBox.warning(self, "¾¯¸æ", "ÕÊºÅ»òÃÜÂë´íÎó")
+                return
 
 
 
     class RegisterWindow(QtWidgets.QMainWindow, re_Ui):
-        switch_window3 = QtCore.pyqtSignal()  # è·³è½¬ä¿¡å·
+        switch_window3 = QtCore.pyqtSignal()  # Ìø×ªĞÅºÅ
 
         def __init__(self):
            super(RegisterWindow, self).__init__()
@@ -216,6 +228,10 @@ if __name__ == "__main__":
            self.back.clicked.connect(self.goLogin)
            self.yes.clicked.connect(self.on_pushButton_register_clicked1)
 
+           global account
+           global password
+           global isRegister
+           isRegister = 0
         def goLogin(self):
            self.switch_window3.emit()
 
@@ -225,18 +241,19 @@ if __name__ == "__main__":
             password1 = self.re_passwd.text()
             test_str = ''
             if account1 != '' and password1 != '':
-                test_str = 'event=register\naccount=' + account1 + '\npasswd=' + password1 + '\n'  # æš‚å®š
+                test_str = 'event=register\naccount=' + account1 + '\npasswd=' + password1 + '\n'  # Ôİ¶¨
             else:
                 test_str=''
-                reply = QMessageBox.warning(self, "è­¦å‘Š", "è´¦å·å¯†ç ä¸èƒ½ä¸ºç©ºï¼Œè¯·è¾“å…¥ï¼")
+                #reply = QMessageBox.warning(self, "¾¯¸æ", "ÕËºÅÃÜÂë²»ÄÜÎª¿Õ£¬ÇëÊäÈë£¡")
                 return
             s.send(test_str.encode())
 
             str = s.recv(1024)
             if 'accepted' in str.decode():
-                my_isRegister = 1
-                print(my_isRegister)
-                reply = QMessageBox.warning(self, "æ­å–œ", "æ³¨å†ŒæˆåŠŸ")
+                isRegister = 1
+                print(isRegister)
+                #reply = QMessageBox.warning(self, "¹§Ï²", "×¢²á³É¹¦")
+                return
 
 
     class MainWindow_(QtWidgets.QMainWindow, main_Ui):
@@ -254,13 +271,14 @@ if __name__ == "__main__":
 
         def show_login(self):
            self.register.close()
+           self.login_.close()
            # self.login_ = LoginWindow()
            self.login_.switch_window1.connect(self.show_register)
            self.login_.switch_window2.connect(self.show_main)
-           self.login_.close()
+           #self.login_.close()
            self.login_.show()
 
-        # è·³è½¬åˆ° operate çª—å£, æ³¨æ„å…³é—­åŸé¡µé¢
+        # Ìø×ªµ½ operate ´°¿Ú, ×¢Òâ¹Ø±ÕÔ­Ò³Ãæ
         def show_register(self):
            self.login_.close()
 
@@ -270,9 +288,11 @@ if __name__ == "__main__":
            self.register.show()
 
         def show_main(self):
-           str = s.recv(1024)
-           print(str)
-           if 'accepted' in str.decode():
+           #str = s.recv(1024)
+           #print(str)
+           print(account)
+           #print(password)
+           if isLogin:
                 my_isLogin = 1
                 print(my_isLogin)
                 self.login_.close()
@@ -281,57 +301,66 @@ if __name__ == "__main__":
 
 
                 #app = QApplication(sys.argv)
-                # æœåŠ¡å™¨çš„IP Port
+                # ·şÎñÆ÷µÄIP Port
                 '''ip = '192.168.42.230'
                 port = 4000
                 addr = (ip, port)
                 addr2 = ('8.130.23.63', 6000)'''
-                # åè®®çš„é•¿åº¦ï¼ˆä¸ç”¨äºæ–‡ä»¶æµçš„ä¼ é€ï¼‰
+                # Ğ­ÒéµÄ³¤¶È£¨²»ÓÃÓÚÎÄ¼şÁ÷µÄ´«ËÍ£©
                 p_len = 1024
 
-                # ä¸‹è½½çš„æ—¶å€™ä¸€æ¬¡æ¥å—å¤šå°‘å­—èŠ‚
+                # ÏÂÔØµÄÊ±ºòÒ»´Î½ÓÊÜ¶àÉÙ×Ö½Ú
                 once_recv_btyes = 10240
 
-                # å‘é€æ–‡ä»¶çš„æ—¶å€™ä¸€æ¬¡è¯»å¤šå°‘å­—èŠ‚
+                # ·¢ËÍÎÄ¼şµÄÊ±ºòÒ»´Î¶Á¶àÉÙ×Ö½Ú
                 once_recv_file_bytes = 10240
 
-                # åˆ›å»ºsocketæ ¸å¿ƒ
+                # ´´½¨socketºËĞÄ
+                '''list='event=list\n'+'pdir='+'/'+'\n'
+                s.send(list.encode())
+                data=s.recv(1024)
+                print(data)'''
                 Session = BaseSocket(s, addr, p_len)
 
-                # æ§åˆ¶ç±»ï¼ˆæ ¹æ®åè®®å®ä½œå‡ºå“åº”ï¼‰
-                remote_handler = Handler(Session, FileIO, p_len, once_recv_file_bytes, once_recv_btyes)
 
-                # æ³¨å†Œsessionçš„å“åº”ç±»
+                # ¿ØÖÆÀà£¨¸ù¾İĞ­ÒéÊµ×÷³öÏìÓ¦£©
+                #remote_handler = Handler(Session, FileIO, p_len, once_recv_file_bytes, once_recv_btyes)
+                remote_handler = my_Handler(Session, my_FileIO, p_len, once_recv_file_bytes, once_recv_btyes,account)
+                # ×¢²ásessionµÄÏìÓ¦Àà
                 Session.on_msg = remote_handler.on_msg
 
-                # å¯åŠ¨sessionç›‘å¬
+                # Æô¶¯session¼àÌı
                 Session.recv_data_for_every()
 
-                # å®ä¾‹ä¸»çª—å£çš„å­ç»„ä»¶ï¼ˆäº¤äº’è¾“å…¥æ¡†ã€è¿›åº¦å±•ç¤ºç•Œé¢ï¼‰
+                # ÊµÀıÖ÷´°¿ÚµÄ×Ó×é¼ş£¨½»»¥ÊäÈë¿ò¡¢½ø¶ÈÕ¹Ê¾½çÃæ£©
                 input_window = InputWindow()
                 progress = ProgressWindow()
 
-                # å®ä¾‹åŒ–ä¸»çª—å£ï¼ˆæ–‡ä»¶çª—å£çš„ä¸»çª—å£ï¼‰
+                # ÊµÀı»¯Ö÷´°¿Ú£¨ÎÄ¼ş´°¿ÚµÄÖ÷´°¿Ú£©
                 main_window = MainWindow(local_handler, remote_handler,
-                                         local_handler.Dict(input_window=input_window, progress_window=progress))
+                                         local_handler.Dict(input_window=input_window, progress_window=progress),
+                                         account,password)
 
-                # æ³¨å†Œæ§åˆ¶ç±»çš„å›è°ƒå‡½æ•°
+                # ×¢²á¿ØÖÆÀàµÄ»Øµ÷º¯Êı
                 remote_handler.local_reload = MainWindow.local_reload_table
-                remote_handler.show_progress = MainWindow.show_progress  # ä¿¡å·æ§½
+                remote_handler.show_progress = MainWindow.show_progress  # ĞÅºÅ²Û
                 remote_handler.hide_progress = MainWindow.hide_progress
                 remote_handler.set_status = MainWindow.set_progress
 
-                # æ³¨å†Œè¿›åº¦æ¡å…³é—­çš„æ—¶é—´
+                # ×¢²á½ø¶ÈÌõ¹Ø±ÕµÄÊ±¼ä
                 progress.on_close = MainWindow.on_progress_window_close
-                time.sleep(0.5)  # è®¾ç½®æ—¶é—´å»¶è¿Ÿï¼Œä»¥è¡¨ç¤ºè¿è¡Œæ—¶é—´é•¿çŸ­
+                time.sleep(0.5)  # ÉèÖÃÊ±¼äÑÓ³Ù£¬ÒÔ±íÊ¾ÔËĞĞÊ±¼ä³¤¶Ì
                 main_window.show()
            else:
+               #QMessageBox.warning(self, "¾¯¸æ", "ÕËºÅÃÜÂë´íÎó£¡")
+               #self.show_close()
                self.show_login()
 
 
 
 
-    controller = Controller()  # æ§åˆ¶å™¨å®ä¾‹
+
+    controller = Controller()  # ¿ØÖÆÆ÷ÊµÀı
     controller.show_login()
 
     sys.exit(app.exec_())

@@ -1,18 +1,19 @@
+# -*- coding: cp936 -*-
 import threading
 import time
 import socket
 import tools
 """
-å®ç°ä¸€ä¸ªå¯é çš„socketé€šé“ï¼Œå¹¶ä¸”å®ƒå…·æœ‰ä¸€ä¸‹åŠŸèƒ½
-    æ”¹é€šé“å…·å¤‡è‡ªå·±ç»´æŠ¤é€šé“å¯ç”¨æ€§
-    æ”¹é€šé“å…·å¤‡ä¼ è¾“å­—èŠ‚æµåŠŸèƒ½ï¼Œå¹¶ä¿éšœèƒ½ä¿è¯æ•°æ®çš„å®Œæ•´æ€§
-    æ”¹é€šé“å…·å¤‡æ¥å—å­—èŠ‚æµåŠŸèƒ½ï¼Œå¹¶ä¿éšœèƒ½ä¿è¯æ•°æ®çš„å®Œæ•´æ€§
+ÊµÏÖÒ»¸ö¿É¿¿µÄsocketÍ¨µÀ£¬²¢ÇÒËü¾ßÓĞÒ»ÏÂ¹¦ÄÜ
+    ¸ÄÍ¨µÀ¾ß±¸×Ô¼ºÎ¬»¤Í¨µÀ¿ÉÓÃĞÔ
+    ¸ÄÍ¨µÀ¾ß±¸´«Êä×Ö½ÚÁ÷¹¦ÄÜ£¬²¢±£ÕÏÄÜ±£Ö¤Êı¾İµÄÍêÕûĞÔ
+    ¸ÄÍ¨µÀ¾ß±¸½ÓÊÜ×Ö½ÚÁ÷¹¦ÄÜ£¬²¢±£ÕÏÄÜ±£Ö¤Êı¾İµÄÍêÕûĞÔ
 """
 DEBUG = 1
 
 class BaseSocket:
     """
-    æ¥å—ä¸€ä¸ªsocketä¼šè¯ï¼Œæ¥æ”¶åˆ°ä¸€ç»„å®Œæ•´çš„åŒ…åè°ƒç”¨å›æ‰å‡½æ•°
+    ½ÓÊÜÒ»¸ösocket»á»°£¬½ÓÊÕµ½Ò»×éÍêÕûµÄ°üºóµ÷ÓÃ»Øµôº¯Êı
     """
     def __init__(self, conn, address, protocol_len, enable_ping=False, retry_interval=1, ping_interval=3):
 
@@ -33,36 +34,38 @@ class BaseSocket:
 
     def recv_data_for_every(self):
         """
-        æ”¹é€šé“å…·å¤‡ä¼ è¾“å­—èŠ‚æµåŠŸèƒ½ï¼Œå¹¶ä¿éšœèƒ½ä¿è¯æ•°æ®çš„å®Œæ•´æ€§
+        ¸ÄÍ¨µÀ¾ß±¸´«Êä×Ö½ÚÁ÷¹¦ÄÜ£¬²¢±£ÕÏÄÜ±£Ö¤Êı¾İµÄÍêÕûĞÔ
         """
         def innter(self_):
-            print("ç­‰å¾…å›è°ƒå‡½æ•°...")
+            print("µÈ´ı»Øµ÷º¯Êı...")
             while True:
                 if self.on_msg:
-                    print("å¥—æ¥å­—ç›‘å¬å·²å¯åŠ¨...")
+                    print("Ì×½Ó×Ö¼àÌıÒÑÆô¶¯...")
                     break
             while self.conn:
                 try:
                     if not self.protocol_len:
-                        raise ("å¿…é¡»æŒ‡å®šæ¥æ”¶æ•°æ®çš„é•¿åº¦",)
+                        raise ("±ØĞëÖ¸¶¨½ÓÊÕÊı¾İµÄ³¤¶È",)
                     received_data = self.conn.recv(self.protocol_len)
 
                     # print("innter  1111", received_data)
 
                     data_len = len(received_data)
                 except ConnectionResetError:
-                    print(f"error ä¸ {self.address} æ–­å¼€è¿æ¥")
+                    print(f"error Óë {self.address} ¶Ï¿ªÁ¬½Ó")
                     self.conn.close()
                     return
                 if data_len == 0:
-                    print(f"ä¸ {self.address} æ–­å¼€è¿æ¥")
+                    print(f"Óë {self.address} ¶Ï¿ªÁ¬½Ó")
                     self.conn.close()
                     return
-                if self.protocol_len:
+                '''if self.protocol_len:
                     while data_len < self.protocol_len:
                         received_data += self.conn.recv(self.protocol_len - data_len)
-                        data_len = len(received_data)
+                        data_len = len(received_data)'''
 
+                print('base½ÓÊÜ',end='')
+                print(received_data)
                 self.on_msg(received_data)
 
         threading.Thread(target=innter, args=(self,)).start()
@@ -78,7 +81,7 @@ class BaseSocket:
     def recv_agroup(self, size):
         receive_size = 0
         receive_data = b''
-        while not size == receive_size:  # æ ¹æ®åè®®å†…è¯´æ˜çš„æ–‡ä»¶å¤§å°ï¼Œå¾ªç¯æ¥æ”¶ï¼Œç›´åˆ°æ¥æ”¶å®Œæ¯•
+        while not size == receive_size:  # ¸ù¾İĞ­ÒéÄÚËµÃ÷µÄÎÄ¼ş´óĞ¡£¬Ñ­»·½ÓÊÕ£¬Ö±µ½½ÓÊÕÍê±Ï
             try:
                 receive_data += self.conn.recv(size - receive_size)
 
@@ -95,31 +98,34 @@ class BaseSocket:
                 self.conn.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 self.conn.connect(self.address)
                 self.conn_online = True
-                print(f"Socketè¿æ¥æˆåŠŸ")
+                print(f"SocketÁ¬½Ó³É¹¦")
                 if self.enable_ping:
                     threading.Thread(target=self.ping).start()
                     threading.Thread(target=self.recv_data_for_every).start()
-                    print("Pingå·²å¯åŠ¨")
+                    print("PingÒÑÆô¶¯")
                 return self.conn
             except Exception as e:
-                print(f"è¿æ¥socketå¤±è´¥ {str(e)}")
+                print(f"Á¬½ÓsocketÊ§°Ü {str(e)}")
                 #time.sleep(self.retry_interval)
 
     def send_all(self, data):
         while True:
             if self.conn_online:
                 try:
-                    if DEBUG:
-                        print(data)
+                    '''test=data.encode()'''
+                    print(data)
                     self.conn.sendall(data)
                     return True
                 except Exception as e:
                     print(f"sendall error {str(e)}")
                     #time.sleep(1)
 
+        threading.Thread(target=send_all, args=(self,)).start()
+
+
     def ping(self):
         """
-        æ§åˆ¶  self.conn_online çš„çŠ¶æ€
+        ¿ØÖÆ  self.conn_online µÄ×´Ì¬
         """
         while True:
             if self.conn_online:
@@ -129,7 +135,7 @@ class BaseSocket:
                 try:
                     self.conn.sendall(ping_data)
                 except Exception as e:
-                    print("æ£€æŸ¥åˆ°æ–­çº¿" ,e)
+                    print("¼ì²éµ½¶ÏÏß" ,e)
                     self.conn.close()
                     self.conn_online = False
                     return True
@@ -137,14 +143,14 @@ class BaseSocket:
 
     def check_conn(self):
         """
-        æ ¹æ®  self.conn_online çš„çŠ¶æ€åˆ¤æ–­æ˜¯å¦é‡è¿
+        ¸ù¾İ  self.conn_online µÄ×´Ì¬ÅĞ¶ÏÊÇ·ñÖØÁ¬
         """
         while True:
             #time.sleep(0.1)
-            if self.conn_online:    # ç­‰å¾…è¿æ¥
-                while True: # ç­‰å¾…æ–­çº¿
+            if self.conn_online:    # µÈ´ıÁ¬½Ó
+                while True: # µÈ´ı¶ÏÏß
                     if not self.conn_online:
-                        print("å‡†å¤‡é‡è¿")
+                        print("×¼±¸ÖØÁ¬")
                         self.get_conn()
                         break
                     #time.sleep(0.1)

@@ -1,3 +1,4 @@
+# -*- coding: cp936 -*-
 from PyQt5.QtWidgets import (QWidget, QTableWidgetItem, QAbstractItemView, QFileIconProvider, QMenu, QMessageBox)
 from PyQt5.QtCore import Qt, QFileInfo, pyqtSignal
 from PyQt5.Qt import QApplication
@@ -14,7 +15,7 @@ class Base:
     @classmethod
     def fmt_pack(cls, widget=None, **kwargs):
         """
-        æ ¼å¼è¯å‡½æ•°ä¹‹å‰ä¼ é€’å‚æ•°çš„æ ¼å¼
+        ¸ñÊ½»°º¯ÊıÖ®Ç°´«µİ²ÎÊıµÄ¸ñÊ½
         """
         if kwargs is None:
             data = Dict()
@@ -24,7 +25,7 @@ class Base:
 
     @staticmethod
     def question(package):
-        res = QMessageBox.question(package.widget, "åˆ é™¤", "ç¡®è®¤åˆ é™¤ï¼Ÿ", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        res = QMessageBox.question(package.widget, "É¾³ı", "È·ÈÏÉ¾³ı£¿", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
             return True
         return False
@@ -39,15 +40,15 @@ class ProgressWindow(Ui_transfer, QWidget):
     def set_status(self, data):
         self.operation.setText(data.operation)
         self.name.setText(data.name)
-        # è¿›åº¦
+        # ½ø¶È
         self.progress.setValue(int(data.progress) or 1)
-        # è¯¦æƒ…
+        # ÏêÇé
         self.detail.setText(data.detail)
-        # ä¼ è¾“é€Ÿåº¦
+        # ´«ÊäËÙ¶È
         self.speed.setText(data.speed)
-        # å·²ç”¨æ—¶é—´
+        # ÒÑÓÃÊ±¼ä
         self.elapsed_time.setText(data.elapsed_time)
-        # é¢„è®¡è¿˜éœ€æ—¶é—´
+        # Ô¤¼Æ»¹ĞèÊ±¼ä
         self.remaining_time.setText(data.remaining_time)
 
     def show_window(self):
@@ -57,7 +58,7 @@ class ProgressWindow(Ui_transfer, QWidget):
         self.hide()
 
     def closeEvent(self, event) -> None:
-        reply = QMessageBox.question(self, "æ–‡ä»¶ä¼ é€", "æ˜¯å¦å–æ¶ˆä¼ é€ï¼Ÿ", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, "ÎÄ¼ş´«ËÍ", "ÊÇ·ñÈ¡Ïû´«ËÍ£¿", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             if self.on_close:
                 self.on_close()
@@ -103,20 +104,23 @@ class MainWindow(Base, Ui_Form, QWidget):
     show_progress = pyqtSignal()
     hide_progress = pyqtSignal()
 
-    def __init__(self, local_c, remote_c, module_c):
+    def __init__(self, local_c, remote_c, module_c,account,password):
         super().__init__()
-        self.table_headers = ['æ–‡ä»¶åå­—', 'æ–‡ä»¶å¤§å°', 'æ–‡ä»¶ç±»å‹', 'ä¿®æ”¹æ—¶é—´']
-        self.setupUi(self)  # ç»§æ‰¿ä¸»ç•Œé¢
+        self.account=account
+        self.table_headers = ['ÎÄ¼şÃû×Ö', 'ÎÄ¼ş´óĞ¡', 'ÎÄ¼şÀàĞÍ', 'ĞŞ¸ÄÊ±¼ä']
+        self.setupUi(self)  # ¼Ì³ĞÖ÷½çÃæ
 
-        self.local_table_func = tools  # åŒ…å«äº†ä¸€äº›å¯ä»¥æ“ä½œæœ¬åœ°æ–‡ä»¶ioçš„å‡½æ•°
-        self.remote_table_func = remote_c  # åŒ…å«äº†å¯ä»¥ä¸è¿œç¨‹æœåŠ¡å™¨çš„ä¸€äº›æ“ä½œ
-        self.modules = module_c  # æ“ä½œè¾…åŠ©ç»„ä»¶çš„ç±»
+        self.local_table_func = tools  # °üº¬ÁËÒ»Ğ©¿ÉÒÔ²Ù×÷±¾µØÎÄ¼şioµÄº¯Êı
+        self.remote_table_func = remote_c  # °üº¬ÁË¿ÉÒÔÓëÔ¶³Ì·şÎñÆ÷µÄÒ»Ğ©²Ù×÷
+        self.modules = module_c  # ²Ù×÷¸¨Öú×é¼şµÄÀà
         self.remote_table_func.on_error = self.on_error
+
         self.set_progress.connect(self.modules.progress_window.set_status)
         self.show_progress.connect(self.modules.progress_window.show_window)
         self.hide_progress.connect(self.modules.progress_window.hide_window)
-        self.init_local_table()  # åˆå§‹åŒ–æœ¬åœ°æ–‡ä»¶è¡¨æ ¼
-        #self.init_remote_table()  # åˆå§‹åŒ–æœ¬åœ°æ–‡ä»¶è¡¨æ ¼
+        self.init_local_table()  # ³õÊ¼»¯±¾µØÎÄ¼ş±í¸ñ
+        self.init_remote_table()  # ³õÊ¼»¯±¾µØÎÄ¼ş±í¸ñ
+
 
     def get_local_selected(self):
         selected_list = list()
@@ -166,14 +170,14 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def remove_dirs(self, package):
         del_count = len(package.data.removes_list)
-        package.data.title = "è€ƒè™‘æ¸…æ¥šäº†å—ï¼Ÿ"
-        package.data.text = f"æ‰¹é‡åˆ é™¤ {del_count}ä¸ªå¯¹è±¡ï¼Œåˆ é™¤åä¸å¯æ’¤å›ï¼"
+        package.data.title = "¿¼ÂÇÇå³şÁËÂğ£¿"
+        package.data.text = f"ÅúÁ¿É¾³ı {del_count}¸ö¶ÔÏó£¬É¾³ıºó²»¿É³·»Ø£¡"
         if self.aer_you_sure(package):
             self.show_progress.emit()
             for i in package.data.removes_list:
                 if self.set_progress:
                     progress_data = tools.Dict(
-                        operation="æ‰¹é‡åˆ é™¤",
+                        operation="ÅúÁ¿É¾³ı",
                         name=os.path.basename(i),
                         progress=100,
                         speed="---",
@@ -192,11 +196,11 @@ class MainWindow(Base, Ui_Form, QWidget):
         # control + s
         if evt.key() == Qt.Key_S and evt.modifiers() == Qt.ControlModifier:
             self.selecte_send()
-        # åˆ·æ–°
+        # Ë¢ĞÂ
         if evt.modifiers() == Qt.ControlModifier and evt.key() == Qt.Key_R:
             self.local_reload_table()
             self.remote_reload()
-        # åˆ é™¤
+        # É¾³ı
         if evt.modifiers() == Qt.ControlModifier and evt.key() == Qt.Key_D:
             self.select_del()
         # print(evt.key())
@@ -210,83 +214,105 @@ class MainWindow(Base, Ui_Form, QWidget):
         #     print("you press shift")
 
     def init_local_table(self):
-        # è®¾ç½®ç›˜ç¬¦åˆ—è¡¨
-        self.set_disk(self.fmt_pack(widget=self.LocalComboBox, disk_list=self.local_table_func.get_disk()))
-
-        # ç»‘å®šç£ç›˜åˆ‡æ¢å›è°ƒå‡½æ•°
+        # ÉèÖÃÅÌ·ûÁĞ±í
+        #self.set_disk(self.fmt_pack(widget=self.LocalComboBox, disk_list=self.local_table_func.get_disk()))
+        print("²âÊÔÓÃ»§",end='')
+        print(self.account)
+        disk=self.local_table_func.get_disk()
+        disk.append('D:/µç×ÓÉÌÎñ')
+        disk.append('D:/computer_network')
+        self.set_disk(self.fmt_pack(widget=self.LocalComboBox, disk_list=disk))
+        # °ó¶¨´ÅÅÌÇĞ»»»Øµ÷º¯Êı
         self.bind_comboBox_change_event(self.fmt_pack(self.LocalComboBox, callbak=self.on_local_change_disk))
 
-        # æ·»åŠ è¡¨å¤´
+        # Ìí¼Ó±íÍ·
         self.add_table_header(self.fmt_pack(self.LocalFiles, headers=self.table_headers))
 
-        # è·å–æ ¹ç›®å½•æ–‡ä»¶ï¼Œå¹¶æ·»åŠ åˆ°æ–‡ä»¶è¡¨æ ¼ä¸­
+        # »ñÈ¡¸ùÄ¿Â¼ÎÄ¼ş£¬²¢Ìí¼Óµ½ÎÄ¼ş±í¸ñÖĞ
         list_dir = lambda: self.local_table_func.listdir(
             self.get_comboBox_first_item(self.fmt_pack(self.LocalComboBox)))
         self.add_item_on_file_table(self.fmt_pack(self.LocalFiles, listdir=list_dir()))
 
-        # æ·»åŠ è¡¨æ ¼åŒå‡»äº‹ä»¶(ä¸‹ä¸€çº§)
+        # Ìí¼Ó±í¸ñË«»÷ÊÂ¼ş(ÏÂÒ»¼¶)
         self.bind_doubleClicked(self.fmt_pack(self.LocalFiles,
                                               get_listdir=list_dir,
                                               curpath=self.get_local_path,
                                               comboBox=self.LocalComboBox
                                               ))
-        # ï¼ˆä¸Šä¸€çº§ï¼‰
+        # £¨ÉÏÒ»¼¶£©
         self.LocalLastDir.clicked.connect(lambda: self.go_back(self.fmt_pack(self.LocalComboBox,
                                                                              listdir=list_dir,
                                                                              file_widget=self.LocalFiles
                                                                              )))
 
-        # è®¾ç½®å³é”®èœå•
-        button_func = Dict(ä¸Šä¼ =self.local_upload,
-                           åˆ·æ–°=self.local_reload_table,
-                           åˆ é™¤=self.local_remove_and_reload,
-                           æ–°å»ºæ–‡ä»¶å¤¹=self.local_ready_mkdir,
-                           é‡å‘½å=self.local_ready_rename)
+        # ÉèÖÃÓÒ¼ü²Ëµ¥
+        button_func = Dict(ÉÏ´«=self.my_local_upload,
+                           Ë¢ĞÂ=self.local_reload_table,
+                           É¾³ı=self.local_remove_and_reload,
+                           ĞÂ½¨ÎÄ¼ş¼Ğ=self.local_ready_mkdir,
+                           ÖØÃüÃû=self.local_ready_rename,
+                           ¸´ÖÆÎÄ¼ş=self.copy,
+                           ¸´ÖÆÎÄ¼ş¼Ğ=self.copydir)
         get_local_path = lambda: self.get_comboBox_first_item(self.fmt_pack(self.LocalComboBox))
         get_remote_path = lambda: self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
         data = self.fmt_pack(self.LocalFiles, menu=button_func, get_local_path=get_local_path,
                              get_remote_path=get_remote_path)
-        # å°†èœå•ç»‘å®šåˆ°æŒ‡å®šå¯¹è±¡ä¸Š
+        # ½«²Ëµ¥°ó¶¨µ½Ö¸¶¨¶ÔÏóÉÏ
         self.table_add_right_key_menu(data)
 
     def init_remote_table(self):
-        # è®¾ç½®ç›˜ç¬¦åˆ—è¡¨
+        # ÉèÖÃÅÌ·ûÁĞ±í
+        disk_list_tmp=[]
+        disk_list_tmp.append(self.remote_table_func.my_get_disk_list())
+        print('init_remote_table ½ÓÊÜ' ,end='')
+        print(disk_list_tmp)
         self.set_disk(
-            self.fmt_pack(widget=self.RemoteComboBox, disk_list=self.remote_table_func.get_disk_list()['disk_list']))
+            self.fmt_pack(widget=self.RemoteComboBox, disk_list=disk_list_tmp))
 
-        # ç»‘å®šç£ç›˜åˆ‡æ¢å›è°ƒå‡½æ•°
+        # °ó¶¨´ÅÅÌÇĞ»»»Øµ÷º¯Êı
         self.bind_comboBox_change_event(self.fmt_pack(self.RemoteComboBox, callbak=self.on_remote_change_disk))
 
-        # æ·»åŠ è¡¨å¤´
+        # Ìí¼Ó±íÍ·
         self.add_table_header(self.fmt_pack(self.RemoteFiles, headers=self.table_headers))
 
-        # è·å–æ ¹ç›®å½•æ–‡ä»¶ï¼Œå¹¶æ·»åŠ åˆ°æ–‡ä»¶è¡¨æ ¼ä¸­
-        list_dir = lambda: self.remote_table_func.get_dir_list(
-            self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox)))
+        # »ñÈ¡¸ùÄ¿Â¼ÎÄ¼ş£¬²¢Ìí¼Óµ½ÎÄ¼ş±í¸ñÖĞ
+        dir_path=self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
+
+        list_msg='event=list\naccount='+self.account + '\npdir=' + dir_path + '\n' #³õÊ¼»¯»ñÈ¡¸ùÄ¿Â¼
+
+        self.remote_table_func.my_send_data(list_msg.encode('gbk'))
+
+        #self.my_send_data('event=list\n' + 'pdir=' + dir_path + '\n')
+
+        list_dir = lambda: self.remote_table_func.get_dir_list2()
+        #print(list_dir)
+        '''list_dir = lambda: self.remote_table_func.my_send_dir_list(
+            self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox)))'''
+
         self.add_item_on_file_table(self.fmt_pack(self.RemoteFiles, listdir=list_dir()))
 
-        # æ·»åŠ è¡¨æ ¼åŒå‡»äº‹ä»¶(ä¸‹ä¸€çº§)
-        self.bind_doubleClicked(self.fmt_pack(self.RemoteFiles,
+        # Ìí¼Ó±í¸ñË«»÷ÊÂ¼ş(ÏÂÒ»¼¶)
+        '''self.bind_doubleClicked(self.fmt_pack(self.RemoteFiles,
                                               get_listdir=list_dir,
                                               curpath=self.get_remote_path,
                                               comboBox=self.RemoteComboBox
-                                              ))
-        # (ä¸Šä¸€çº§)
+                                              ))'''
+        # (ÉÏÒ»¼¶)
         self.RemoteLastDir.clicked.connect(lambda: self.go_back(self.fmt_pack(self.RemoteComboBox,
                                                                               listdir=list_dir,
                                                                               file_widget=self.RemoteFiles
                                                                               )))
-        # è®¾ç½®å³é”®èœå•
-        button_func = Dict(ä¸‹è½½=self.remote_download,
-                           åˆ·æ–°=self.remote_reload,
-                           åˆ é™¤=self.remote_remove,
-                           æ–°å»ºæ–‡ä»¶å¤¹=self.remote_mkdir,
-                           é‡å‘½å=self.remote_rename)
+        # ÉèÖÃÓÒ¼ü²Ëµ¥
+        button_func = Dict(ÏÂÔØ=self.remote_download,
+                           Ë¢ĞÂ=self.remote_reload,
+                           É¾³ı=self.remote_remove,
+                           ĞÂ½¨ÎÄ¼ş¼Ğ=self.remote_mkdir,
+                           ÖØÃüÃû=self.remote_rename)
         get_local_path = lambda: self.get_comboBox_first_item(self.fmt_pack(self.LocalComboBox))
         get_remote_path = lambda: self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
         data = self.fmt_pack(self.RemoteFiles, menu=button_func, get_local_path=get_local_path,
                              get_remote_path=get_remote_path)
-        # å°†èœå•ç»‘å®šåˆ°æŒ‡å®šå¯¹è±¡ä¸Š
+        # ½«²Ëµ¥°ó¶¨µ½Ö¸¶¨¶ÔÏóÉÏ
         self.table_add_right_key_menu(data)
 
     def bind_doubleClicked(self, package):
@@ -295,7 +321,7 @@ class MainWindow(Base, Ui_Form, QWidget):
     @classmethod
     def bind_comboBox_change_event(cls, package):
         """
-        ç»‘å®šä¸‹æ‹‰æ¡†æ›´æ”¹äº‹ä»¶
+        °ó¶¨ÏÂÀ­¿ò¸ü¸ÄÊÂ¼ş
         """
         package.widget.currentIndexChanged.connect(package.data.callbak)
 
@@ -304,10 +330,10 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def on_local_change_disk(self):
         """
-        æœ¬åœ°åˆ‡æ¢äº†ç›˜ç¬¦
+        ±¾µØÇĞ»»ÁËÅÌ·û
         """
         next_dir_list = self.local_table_func.listdir(Dict(path=self.LocalComboBox.currentText()))
-        print("æœ¬åœ°åˆ‡æ¢ç›˜ç¬¦", self.LocalComboBox.currentText())
+        print("±¾µØÇĞ»»ÅÌ·û", self.LocalComboBox.currentText())
         #self.BaseSocket.send_all('event=list\npdir=/home'.encode())
 
         if next_dir_list:
@@ -316,9 +342,9 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def on_remote_change_disk(self):
         """
-        æœ¬åœ°åˆ‡æ¢äº†ç›˜ç¬¦
+        ±¾µØÇĞ»»ÁËÅÌ·û
         """
-        print("è¿œç¨‹åˆ‡æ¢ç›˜ç¬¦", self.RemoteComboBox.currentText())
+        print("Ô¶³ÌÇĞ»»ÅÌ·û", self.RemoteComboBox.currentText())
         next_dir_list = self.remote_table_func.get_dir_list(self.RemoteComboBox.currentText())
         if next_dir_list:
             self.clear_table_files(self.fmt_pack(self.RemoteFiles))
@@ -329,24 +355,26 @@ class MainWindow(Base, Ui_Form, QWidget):
         print("on_progress_window_close")
 
     def local_upload(self, package):
+        print('package',end='')
+        print(package)
         # abs_path = os.path.join(package.data.local_path, package.data.name)
         for flag, item in tools.list_dir_all(package.data.local_path, package.data.name):
             self.show_progress.emit()
-            if flag == 0:  # éœ€è¦åˆ›å»ºç›®å½•
+            if flag == 0:  # ĞèÒª´´½¨Ä¿Â¼
                 write_to = self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
                 self.set_progress.emit(Dict(
-                    operation="åˆ›å»ºç›®å½•",
+                    operation="´´½¨Ä¿Â¼",
                     name=item,
                     progress=100,
-                    detail="åˆ›å»ºå®Œæ¯•",
+                    detail="´´½¨Íê±Ï",
                     speed="---",
                     elapsed_time="00:00:00",
                     remaining_time="00:00:00"
                 ))
                 QApplication.processEvents()
                 self.remote_table_func.os_mkdir(os.path.join(write_to, item))
-                print(f"åˆ›å»ºç›®å½•:{item}")
-            else:  # å‘é€æ–‡ä»¶
+                print(f"´´½¨Ä¿Â¼:{item}")
+            else:  # ·¢ËÍÎÄ¼ş
                 abs_path = os.path.join(package.data.local_path, item)
                 base_write_to = self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
                 #base_write_to='/home'
@@ -369,7 +397,7 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def local_ready_mkdir(self, package):
         """
-        æœ¬åœ°åˆ›å»ºæ–‡ä»¶
+        ±¾µØ´´½¨ÎÄ¼ş
         """
         package.data.local = True
         package.data.mkdir = True
@@ -377,11 +405,11 @@ class MainWindow(Base, Ui_Form, QWidget):
         package.data.ok = self.input_ok
         self.modules.input_window.register(package)
         self.modules.input_window.show_window()
-        self.modules.input_window.set_title(self.fmt_pack(title="åˆ›å»ºç›®å½•"))
+        self.modules.input_window.set_title(self.fmt_pack(title="´´½¨Ä¿Â¼"))
 
     def local_ready_rename(self, package):
         """
-        é‡å‘½åæœ¬åœ°æ–‡ä»¶
+        ÖØÃüÃû±¾µØÎÄ¼ş
         """
         package.data.local = True
         package.data.rename = True
@@ -389,18 +417,18 @@ class MainWindow(Base, Ui_Form, QWidget):
         package.data.ok = self.input_ok
         self.modules.input_window.register(package)
         self.modules.input_window.show_window()
-        self.modules.input_window.set_title(self.fmt_pack(title="é‡å‘½å"))
+        self.modules.input_window.set_title(self.fmt_pack(title="ÖØÃüÃû"))
         self.modules.input_window.set_text(self.fmt_pack(text=package.data.name))
 
     def local_ready_del(self, package):
         """
-        åˆ é™¤æœ¬åœ°æŒ‡å®šé¡¹
+        É¾³ı±¾µØÖ¸¶¨Ïî
         """
         abs_path = os.path.join(package.data.local_path, package.data.name)
         self.local_table_func.remove(abs_path)
 
     def local_reload_table(self, package=None):
-        """é‡æ–°åŠ è½½æœ¬åœ°æ–‡ä»¶åˆ—è¡¨"""
+        """ÖØĞÂ¼ÓÔØ±¾µØÎÄ¼şÁĞ±í"""
         package = self.fmt_pack(self.LocalFiles)
         self.clear_table_files(package)
         package.data.listdir = self.local_table_func.listdir(
@@ -409,20 +437,20 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def local_remove_and_reload(self, package):
         """
-        åˆ é™¤ç›®å½•æˆ–æ–‡ä»¶ å¹¶ä¸”é‡æ–°åŠ è½½åˆ—è¡¨
+        É¾³ıÄ¿Â¼»òÎÄ¼ş ²¢ÇÒÖØĞÂ¼ÓÔØÁĞ±í
         """
-        package.data.title = "è€ƒè™‘æ¸…æ¥šäº†å—ï¼Ÿ"
-        package.data.text = "åˆ é™¤åä¸å¯æ’¤å›ï¼"
+        package.data.title = "¿¼ÂÇÇå³şÁËÂğ£¿"
+        package.data.text = "É¾³ıºó²»¿É³·»Ø£¡"
         if self.aer_you_sure(package):
             self.local_ready_del(package)
             self.local_reload_table(package)
 
     def remote_download(self, package):
         # for flag, item in tools.list_dir_all(package.data.remote_path, package.data.name):
-        #     if flag == 0:   # éœ€è¦åˆ›å»ºç›®å½•
+        #     if flag == 0:   # ĞèÒª´´½¨Ä¿Â¼
         #         write_to = self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
         #         self.remote_table_func.os_mkdir(os.path.join(write_to, item))
-        #     else:   # å‘é€æ–‡ä»¶
+        #     else:   # ·¢ËÍÎÄ¼ş
         #         abs_path = os.path.join(package.data.local_path, item)
         #         base_write_to = self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
         #         write_to = os.path.dirname(os.path.join(base_write_to, item))
@@ -436,10 +464,23 @@ class MainWindow(Base, Ui_Form, QWidget):
         self.remote_table_func.down_load_files(files, local_path)
 
     def remote_reload(self, package=None):
-        # è·å–æ ¹ç›®å½•æ–‡ä»¶ï¼Œå¹¶æ·»åŠ åˆ°æ–‡ä»¶è¡¨æ ¼ä¸­
-        list_dir = self.remote_table_func.get_dir_list(self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox)))
+        # »ñÈ¡¸ùÄ¿Â¼ÎÄ¼ş£¬²¢Ìí¼Óµ½ÎÄ¼ş±í¸ñÖĞ
+        '''list_dir = self.remote_table_func.get_dir_list(self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox)))
         self.clear_table_files(self.fmt_pack(self.RemoteFiles))
         self.add_item_on_file_table(self.fmt_pack(self.RemoteFiles, listdir=list_dir))
+        self.add_table_header(self.fmt_pack(self.RemoteFiles, headers=self.table_headers))'''
+        self.clear_table_files(self.fmt_pack(self.RemoteFiles))
+        # »ñÈ¡¸ùÄ¿Â¼ÎÄ¼ş£¬²¢Ìí¼Óµ½ÎÄ¼ş±í¸ñÖĞ
+        dir_path=self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
+        #print(dir_path)
+        list_msg='event=list\naccount='+self.account + '\npdir=' + dir_path + '\n'
+        self.remote_table_func.my_send_data(list_msg.encode('gbk'))
+
+        list_dir = lambda: self.remote_table_func.get_dir_list2()
+        print(list_dir)
+
+        self.add_item_on_file_table(self.fmt_pack(self.RemoteFiles, listdir=list_dir()))
+
 
     def remote_mkdir(self, package):
         package.data.remote = True
@@ -448,10 +489,15 @@ class MainWindow(Base, Ui_Form, QWidget):
         package.data.ok = self.input_ok
         self.modules.input_window.register(package)
         self.modules.input_window.show_window()
-        self.modules.input_window.set_title(self.fmt_pack(title="åˆ›å»ºç›®å½•"))
+        self.modules.input_window.set_title(self.fmt_pack(title="´´½¨Ä¿Â¼"))
+        #print('mkdir@@@@@')
+        #print(package.data.path)
+        #print(package.data.title)
+        #mkdir_msg = 'event=mkdir\naccount='+self.account+'\npdir='+'\nname='+'\n'
+        #self.remote_table_func.my_send_data(mkdir_msg.encode('gbk'))
 
     def remote_remove(self, package):
-        if self.aer_you_sure(self.fmt_pack(self, title="è€ƒè™‘æ¸…æ¥šäº†å—ï¼Ÿ", text="åˆ é™¤ä¸å¯æ’¤å›!")):
+        if self.aer_you_sure(self.fmt_pack(self, title="¿¼ÂÇÇå³şÁËÂğ£¿", text="É¾³ı²»¿É³·»Ø!")):
             self.remote_table_func.os_remove(os.path.join(package.data.remote_path, package.data.name))
             self.remote_reload(package)
 
@@ -462,8 +508,15 @@ class MainWindow(Base, Ui_Form, QWidget):
         package.data.ok = self.input_ok
         self.modules.input_window.register(package)
         self.modules.input_window.show_window()
-        self.modules.input_window.set_title(self.fmt_pack(title="é‡å‘½å"))
+        self.modules.input_window.set_title(self.fmt_pack(title="ÖØÃüÃû"))
         self.modules.input_window.set_text(self.fmt_pack(text=package.data.name))
+
+    def copy(self):
+        print('copy')
+
+    def copydir(self):
+        print('copydir')
+
 
     def get_local_path(self):
         return self.LocalComboBox.currentText()
@@ -471,7 +524,41 @@ class MainWindow(Base, Ui_Form, QWidget):
     def get_remote_path(self):
         return self.RemoteComboBox.currentText()
 
-    # ==========================è¿œç¨‹ä¸æœ¬åœ°çš„æ–‡ä»¶è¡¨æ ¼å…¬ç”¨æ–¹æ³•=======================================+#
+
+    def my_local_upload(self, package):
+        #print(package)
+        abs_path = os.path.join(package.data.local_path)
+        base_write_to = self.get_comboBox_first_item(self.fmt_pack(self.RemoteComboBox))
+        #base_write_to='/home'
+        write_to = os.path.dirname(os.path.join(base_write_to))
+        file_name=package.data.name
+        #print(file_name)
+        #print(abs_path)
+        #print(base_write_to)
+        #print(write_to)
+        self.remote_table_func.my_send_files(str(file_name), str(abs_path), str(base_write_to))
+        try:
+            #self.remote_table_func.send_files([abs_path], write_to, self.set_progress)
+            #self.remote_table_func.my_send_files(file_name,str(abs_path), str(base_write_to))
+            if DEBUG:
+                print(abs_path)
+                print(base_write_to)
+                print(write_to)
+        except Exception as e:
+            print("12344")
+
+
+        self.remote_reload(package)
+
+
+
+
+
+
+
+
+
+    # ==========================Ô¶³ÌÓë±¾µØµÄÎÄ¼ş±í¸ñ¹«ÓÃ·½·¨=======================================+#
 
     def _to_next_node(self, evt, package):
         f_widget = package.widget
@@ -487,14 +574,14 @@ class MainWindow(Base, Ui_Form, QWidget):
             self.add_item_on_file_table(package)
         else:
             if "Local" in f_widget.objectName():
-                print("æ‰“å¼€%s" % next_path)
+                print("´ò¿ª%s" % next_path)
                 os.system(next_path)
             else:
-                QMessageBox.warning(self.RemoteFiles, 'æç¤º', 'ä¸èƒ½æ‰“å¼€è¿œç¨‹æ–‡ä»¶')
+                QMessageBox.warning(self.RemoteFiles, 'ÌáÊ¾', '²»ÄÜ´ò¿ªÔ¶³ÌÎÄ¼ş')
 
     def go_back(self, package):
-        cur_path = self.get_comboBox_first_item(package)[:-1]  # dirnameå‡½æ•°ä»¥åæ–œçº¿æ¥åŒºåˆ†ç›®å½•ï¼Œéœ€è¦æŠŠæœ€åä¸€ä¸ªåæ–œçº¿å»æ‰
-        last_path = os.path.dirname(cur_path) + "/"  # åœ¨åŠ ä¸Šå»
+        cur_path = self.get_comboBox_first_item(package)[:-1]  # dirnameº¯ÊıÒÔ·´Ğ±ÏßÀ´Çø·ÖÄ¿Â¼£¬ĞèÒª°Ñ×îºóÒ»¸ö·´Ğ±ÏßÈ¥µô
+        last_path = os.path.dirname(cur_path) + "/"  # ÔÚ¼ÓÉÏÈ¥
         self.set_comboBox_text(self.fmt_pack(package.widget, text=last_path))
         package.data.listdir = package.data.listdir()
         package.widget = package.data.file_widget
@@ -516,7 +603,7 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def input_ok(self, package):
         """
-        å½“åˆ›å»ºå®Œç›®å½•æˆ–è€…æ›´æ”¹äº†ç›®å½•æˆ–è€…æ–‡ä»¶åå­—åä¼šè·³è½¬è¿™é‡Œï¼Œè¿›è¡ŒåŠ¨ä½œåˆ†å‘
+        µ±´´½¨ÍêÄ¿Â¼»òÕß¸ü¸ÄÁËÄ¿Â¼»òÕßÎÄ¼şÃû×Öºó»áÌø×ªÕâÀï£¬½øĞĞ¶¯×÷·Ö·¢
         """
         if package.data.local:
             abs_path = os.path.join(package.data.local_path, package.data.text)
@@ -538,7 +625,13 @@ class MainWindow(Base, Ui_Form, QWidget):
         else:
             abs_path = os.path.join(package.data.remote_path, package.data.text)
             if package.data.mkdir:
-                self.remote_table_func.os_mkdir(abs_path)
+                #self.remote_table_func.os_mkdir(abs_path)
+                #@@@@@
+
+                mkdir_msg = 'event=mkdir\naccount=' + self.account + '\npdir=' +abs_path+ '\nname='+package.data.text + '\n'
+                self.remote_table_func.my_send_data(mkdir_msg.encode('gbk'))
+
+                #self.remote_table_func.my_send_data()
                 self.modules.input_window.hide_window()
             else:
                 old_path = os.path.join(package.data.remote_path, package.data.name)
@@ -549,16 +642,16 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     @classmethod
     def add_table_header(cls, package):
-        """è®¾ç½®æ–‡ä»¶è¡¨å¤´"""
-        # è®¾ç½®è¡¨å¤´ä¸å¯è§ï¼Œå¯èƒ½æ˜¯å·¦ä¾§çš„ä¸€åˆ—
+        """ÉèÖÃÎÄ¼ş±íÍ·"""
+        # ÉèÖÃ±íÍ·²»¿É¼û£¬¿ÉÄÜÊÇ×ó²àµÄÒ»ÁĞ
         package.widget.verticalHeader().setVisible(False)
-        # SelectionBehaviorå±æ€§ç”¨äºæ§åˆ¶é€‰æ‹©è¡Œä¸ºæ“ä½œçš„æ•°æ®å•ä½ï¼Œæ˜¯æŒ‡é€‰æ‹©æ—¶é€‰ä¸­æ•°æ®æ˜¯æŒ‰è¡Œã€æŒ‰åˆ—è¿˜æ˜¯æŒ‰é¡¹æ¥é€‰æ‹©ï¼Œè¿™é‡Œé€‰æ‹©è¡Œ
+        # SelectionBehaviorÊôĞÔÓÃÓÚ¿ØÖÆÑ¡ÔñĞĞÎª²Ù×÷µÄÊı¾İµ¥Î»£¬ÊÇÖ¸Ñ¡ÔñÊ±Ñ¡ÖĞÊı¾İÊÇ°´ĞĞ¡¢°´ÁĞ»¹ÊÇ°´ÏîÀ´Ñ¡Ôñ£¬ÕâÀïÑ¡ÔñĞĞ
         package.widget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        # åœ¨æ ‘å‹éƒ¨ä»¶QTreeWidgetä¸­ï¼Œæœ‰ä¸‰ç§æ–¹æ³•è§¦å‘è¿›è¡Œé¡¹æ•°æ®çš„ç¼–è¾‘ï¼šeditTriggersè§¦å‘ç¼–è¾‘ã€editItemè§¦å‘ç¼–è¾‘å’ŒopenPersistentEditoræ‰“å¼€æŒä¹…ç¼–è¾‘å™¨ã€‚
+        # ÔÚÊ÷ĞÍ²¿¼şQTreeWidgetÖĞ£¬ÓĞÈıÖÖ·½·¨´¥·¢½øĞĞÏîÊı¾İµÄ±à¼­£ºeditTriggers´¥·¢±à¼­¡¢editItem´¥·¢±à¼­ºÍopenPersistentEditor´ò¿ª³Ö¾Ã±à¼­Æ÷¡£
         package.widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # åº”è¯¥æ˜¯è®¾ç½®ç‚¹å‡»çš„æ—¶å€™é€‰ä¸­å¤šå°‘åˆ—
+        # Ó¦¸ÃÊÇÉèÖÃµã»÷µÄÊ±ºòÑ¡ÖĞ¶àÉÙÁĞ
         package.widget.setColumnCount(4)
-        # å…è®¸è¡¨æ ¼å³é”®
+        # ÔÊĞí±í¸ñÓÒ¼ü
         package.widget.setContextMenuPolicy(Qt.CustomContextMenu)
         for index, item_name in enumerate(package.data.headers):
             item = QTableWidgetItem()
@@ -569,15 +662,15 @@ class MainWindow(Base, Ui_Form, QWidget):
     @classmethod
     def add_item_on_file_table(cls, package):
         """
-        åƒæŒ‡å®šè¡¨æ ¼å¯¹è±¡æ·»åŠ æŒ‡å®šçš„ç‰¹å®šæ ¼å¼æ•°æ®æ•°æ®
+        ÏñÖ¸¶¨±í¸ñ¶ÔÏóÌí¼ÓÖ¸¶¨µÄÌØ¶¨¸ñÊ½Êı¾İÊı¾İ
         """
 
         for index, file_obj in enumerate(package.data.listdir):
             file_obj = Dict(file_obj)
-            # æ’å…¥ç©ºè¡Œ
+            # ²åÈë¿ÕĞĞ
             package.widget.insertRow(index)
 
-            # =============æ–‡ä»¶å›¾æ ‡
+            # =============ÎÄ¼şÍ¼±ê
             item0 = QTableWidgetItem()
             item0.setText(file_obj.name)
             provider = QFileIconProvider()
@@ -585,20 +678,20 @@ class MainWindow(Base, Ui_Form, QWidget):
             # f_t_widget.setRowHeight(index, 20)
             package.widget.setItem(index, 0, item0)
 
-            # =============æ–‡ä»¶å¤§å°
+            # =============ÎÄ¼ş´óĞ¡
             item3 = QTableWidgetItem()
             # item3.setFont(self.fileInfoWidget.global_row_font)
             item3.setText(file_obj.size)
             package.widget.setItem(index, 1, item3)
 
-            # =============æ–‡ä»¶ç±»å‹
+            # =============ÎÄ¼şÀàĞÍ
             item2 = QTableWidgetItem()
             # item2.setFont(self.fileInfoWidget.global_row_font)
             # fileType = provider.type(QFileInfo(abs_file_path))
             item2.setText(file_obj.type)
             package.widget.setItem(index, 2, item2)
 
-            # ============æœ€åä¿®æ”¹æ—¶é—´
+            # ============×îºóĞŞ¸ÄÊ±¼ä
             item1 = QTableWidgetItem()
             # item1.setFont(self.fileInfoWidget.global_row_font)
             # mtime = os.path.getmtime(abs_file_path)
@@ -608,8 +701,8 @@ class MainWindow(Base, Ui_Form, QWidget):
 
     def table_add_right_key_menu(self, package):
         """
-        ç»‘å®šè¡¨å³é”®åŠŸèƒ½
-        poså³é”®æ—¶ç»„ä»¶ä¼ é€’è¿›å»
+        °ó¶¨±íÓÒ¼ü¹¦ÄÜ
+        posÓÒ¼üÊ±×é¼ş´«µİ½øÈ¥
         """
         package.widget.customContextMenuRequested.connect(lambda pos: self.on_right_click(pos, package))
 
@@ -629,20 +722,20 @@ class MainWindow(Base, Ui_Form, QWidget):
             # item_menu = menu.addAction(value)
             # menu_map[item_menu] = func
 
-        # æ˜¾ç¤ºèœå•ï¼Œå¹¶è¿”å›ä¸€ä¸ªè¢«é€‰æ‹©é¡¹æˆ–è€…ç©º
+        # ÏÔÊ¾²Ëµ¥£¬²¢·µ»ØÒ»¸ö±»Ñ¡ÔñÏî»òÕß¿Õ
         action = menu.exec_(package.widget.mapToGlobal(pos))
         if not action:
-            print("æœªé€‰æ‹©ä»»ä½•é€‰é¡¹")
+            print("Î´Ñ¡ÔñÈÎºÎÑ¡Ïî")
             return
 
-        # é€‰ä¸­çš„æ“ä½œ
+        # Ñ¡ÖĞµÄ²Ù×÷
         select_action = action.text()
-        # æ²¡æœ‰é€‰æ‹©æ–‡ä»¶æ—¶å€™ä¸èƒ½ä½¿ç”¨è¿™äº›åŠŸèƒ½
-        if row_num == -1 and select_action in ["ä¸Šä¼ ", "ä¸‹è½½", "é‡å‘½å", "åˆ é™¤"]:
-            QMessageBox.warning(package.widget, "æ“ä½œ", "è¯·é€‰æ‹©è¦ç¼–è¾‘çš„æ–‡ä»¶")
+        # Ã»ÓĞÑ¡ÔñÎÄ¼şÊ±ºò²»ÄÜÊ¹ÓÃÕâĞ©¹¦ÄÜ
+        if row_num == -1 and select_action in ["ÉÏ´«", "ÏÂÔØ", "ÖØÃüÃû", "É¾³ı"]:
+            QMessageBox.warning(package.widget, "²Ù×÷", "ÇëÑ¡ÔñÒª±à¼­µÄÎÄ¼ş")
             return
 
-        # è·å–æ“ä½œå¯¹åº”çš„å‡½æ•°
+        # »ñÈ¡²Ù×÷¶ÔÓ¦µÄº¯Êı
         button_func = package.data.menu[select_action]
         standard_data = cls.fmt_pack(name=select_name,
                                      local_path=package.data.get_local_path(),
