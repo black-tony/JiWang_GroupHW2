@@ -1,6 +1,12 @@
 <?php
 header("content-type:text/html; charset=gbk");
 session_start();
+if(!isset($_SESSION['account']))
+{
+    session_write_close();
+    header("location:./login.html");
+    exit;
+}
 $host="localhost";
 $port=4000;
 $account=$_SESSION['account'];

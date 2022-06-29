@@ -4,7 +4,7 @@ var sel_pdir = "";
 var sel_type = "";
 var file_and_dir = {};
 function GetAccount() {
-    var event = "event = getaccount";
+    var event = "event=getaccount";
     var xhr = new XMLHttpRequest();
     xhr.open("POST","./server.php", true);
     xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");  //设置为表单方式提交
@@ -364,11 +364,14 @@ function Upload()
                 
                 
             }
-            else 
+            else if(this.responseText == "1")
             {
                 Upload_True();
             }
-            
+            else 
+            {
+                document.getElementById("returned_script").innerHTML = this.responseText ;
+            }
             // console.log(this.responseText);
             // if(data.status === 200) {
             //     document.querySelector('#img').src = 'http://www.liulongbin.top:3006' + data.url

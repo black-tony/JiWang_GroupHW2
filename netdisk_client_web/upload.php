@@ -1,5 +1,12 @@
 <?php
 header("content-type:text/html; charset=gbk");
+session_start();
+if(!isset($_SESSION['account']))
+{
+    session_write_close();
+    header("location:./login.html");
+    exit;
+}
 $buf;
 function update_info($md5_sum, $filename)
 {

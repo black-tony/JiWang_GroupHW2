@@ -22,11 +22,12 @@ else {
         $_SESSION['account']=$_POST['account'];
         $_SESSION['pdir']="/";
         session_write_close();
-        header("location:./index.html");
+        header("location:./main.html");
     }
     else {
-
-        echo "<script>alert(\"用户名或密码错误!\");histroy.back()</script>";
+        // 用户名或密码错误!
+        // echo "<script>alert('退出成功!');location.href='".$_SERVER["HTTP_REFERER"]."';</script>"; 
+        echo "<script>alert(\"".$array[1]."\");location.href='".$_SERVER["HTTP_REFERER"]."';</script>";
         exit;
     }
 }
