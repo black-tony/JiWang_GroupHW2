@@ -14,6 +14,7 @@ struct Server {
 struct Client {
     int sfd;
     sockaddr_in addr;
+    std::string ip;
 };
 
 int setnonblock(int sockfd, bool nonblock = true);

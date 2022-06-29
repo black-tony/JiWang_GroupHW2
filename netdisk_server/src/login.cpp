@@ -34,7 +34,7 @@ int register_user(MYSQL *(&mysql), const string &account, const string &passwd, 
     query(mysql, res, command);
     if ((row = mysql_fetch_row(res)) == NULL) {
         // 未查找到结果,即不存在重复用户,可以注册
-        command = "insert into user(account,passwd)values(\"" + account + "\",\"" + passwd + "\")";
+        command = "insert into user(account,passwd)values(\"" + account + "\",MD5(\"" + passwd + "\"))";
         if (mysql_query(mysql, command.c_str())) {
             cerr << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
             msg = "register failed, database error\n";
@@ -73,21 +73,21 @@ int handle_register(char *buf, int rn, MYSQL *(&mysql), string &msg) {
     return FAILED;
 }
 
-int user_login(MYSQL *(&mysql), const string &account, const string &passwd, string &msg) {
+int user_login(const string& ip, MYSQL *(&mysql), const string &account, const string &passwd, string &msg) {
     MYSQL_RES *res;
     MYSQL_ROW row;
-    string command = "select * from user where (account=\"" + account + "\")";
+    string command = "select * from user where account=\"" + account + "\" and passwd=MD5(\"" + passwd +"\")";
     query(mysql, res, command);
     if ((row = mysql_fetch_row(res)) != NULL) {
-        if (row[1] != passwd) {
-            msg = "incorrect password\n";
-            return FAILED;
-        }
-        else {
-            logger("用户" + account + "登陆");
+            logger("IP: " + ip + ", 用户" + account + "登陆");
             msg = "login success\n";
             return ACCEPT;
-        }
+    }
+    command = "select * from user where account=\"" + account + "\"";
+    query(mysql, res, command);
+    if ((row = mysql_fetch_row(res)) != NULL) {
+        msg = "wrong password\n";
+        return FAILED;
     }
     else {
         // 未查找到结果,用户名不存在
@@ -97,7 +97,7 @@ int user_login(MYSQL *(&mysql), const string &account, const string &passwd, str
 
 }
 
-int handle_login(char *buf, int rn, MYSQL *(&mysql), Client &client, string &msg) {
+int handle_login(const string &ip, char *buf, int rn, MYSQL *(&mysql), Client &client, string &msg) {
     string account;
     string passwd;
     int i = 0;
@@ -113,7 +113,7 @@ int handle_login(char *buf, int rn, MYSQL *(&mysql), Client &client, string &msg
         account = account.substr(8);
         passwd = passwd.substr(7);
         if (account.size() > 0 && passwd.size() > 0) {
-            if (user_login(mysql, account, passwd, msg) == FAILED) {
+            if (user_login(ip, mysql, account, passwd, msg) == FAILED) {
                 return FAILED;
             }
             else {

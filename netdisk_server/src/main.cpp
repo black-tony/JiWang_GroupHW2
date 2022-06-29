@@ -69,7 +69,7 @@ int event_parse(char *buf, int rn, MYSQL *(&mysql), Client &client, char *rep, i
             ret = handle_register(buf, rn, mysql, msg);
         }
         else if (event == "login") {
-            ret = handle_login(buf, rn, mysql, client, msg);
+            ret = handle_login(client.ip, buf, rn, mysql, client, msg);
         }
         else if (event == "upload") {
             ret = handle_upload(buf, rn, mysql, msg);
@@ -139,6 +139,7 @@ int handle_accept(int server_fd, int epoll_fd, vector<Client> &clients) {
     socklen_t addr_len = sizeof(sockaddr_in);
     cli.sfd = accept(server_fd, (sockaddr*)(&cli.addr), &addr_len);
     setnonblock(cli.sfd);
+    cli.ip = inet_ntoa(cli.addr.sin_addr);
     add_event(epoll_fd, cli.sfd, EPOLLIN);
     clients.emplace_back(cli);
 

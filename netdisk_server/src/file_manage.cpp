@@ -69,7 +69,7 @@ int begin_upload(char *content, int size, MYSQL *(&mysql), const string &md5, co
         else {
             // 文件不完整,断点续传
             struct stat statbuf;
-            if(stat(("./file/" + md5).c_str(), &statbuf)==0)
+            if(stat(("/usr/netdisk-file/" + md5).c_str(), &statbuf)==0)
                 msg = "resume upload\n" + to_string(statbuf.st_size) + "\n";
                 return ACCEPT;
             // 获取文件大小失败,重新传
@@ -84,7 +84,7 @@ int begin_upload(char *content, int size, MYSQL *(&mysql), const string &md5, co
     fstream fout("/usr/netdisk-file/" + md5, ios::out | ios::binary);
     fout.write(content, size);
     fout.close();
-    command = "insert into file(md5,status)values(\"" + md5 + "\",\"incomplete\", 0)";
+    command = "insert into file(md5,status,link)values(\"" + md5 + "\",\"incomplete\", 0)";
     mysql_query(mysql, command.c_str());
     msg = "upload begin\n";
     return ACCEPT;
@@ -94,6 +94,10 @@ int begin_upload(char *content, int size, MYSQL *(&mysql), const string &md5, co
 
 int continue_upload(char *content, int size, const string &md5, string &msg) {
     fstream fout("/usr/netdisk-file/" + md5, ios::out | ios::app | ios::binary);
+    if (!fout.is_open()) {
+        cerr << "文件打开失败" << endl;
+    }
+    cout << size << endl;
     fout.write(content, size);
     fout.close();
     msg = "uploading\n";
@@ -289,11 +293,16 @@ int remove(MYSQL *(&mysql), string &msg, const string &account, const string &pd
         mysql_query(mysql, command.c_str());
         // 减小计数
         update_link_count(mysql, md5, -1);
+        msg = "remove successfully\n";
+        logger("用户"+account+"删除文件"+pdir+name+"成功");
+        return ACCEPT;
+    }
+    else {
+        msg = "no such file\n";
+        return FAILED;
     }
 
-    msg = "remove successfully\n";
-    logger("用户"+account+"删除文件"+pdir+name);
-    return ACCEPT;
+
 }
 
 int handle_move(char *buf, int rn, MYSQL *(&mysql), string &msg) {
@@ -432,7 +441,7 @@ int rmdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdi
         // 准备删除文件夹下其他文件/文件夹
         unordered_map<string, int> hash;
         string dir = pdir + name + "/";
-        command = "select * from storage where acount=\"" + account + "\"";
+        command = "select * from storage where account=\"" + account + "\"";
         mysql_query(mysql, command.c_str());
         res = mysql_store_result(mysql);
         while ((row = mysql_fetch_row(res)) != NULL) {
@@ -476,7 +485,7 @@ int mvdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdi
         mysql_query(mysql, command.c_str());
         // 准备移动文件夹下其他文件/文件夹
         string dir = pdir + name + "/";
-        command = "select * from storage where acount=\"" + account + "\"";
+        command = "select * from storage where account=\"" + account + "\"";
         mysql_query(mysql, command.c_str());
         res = mysql_store_result(mysql);
         while ((row = mysql_fetch_row(res)) != NULL) {
@@ -484,11 +493,11 @@ int mvdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdi
                 // 检查是否在该目录下
                 if (!strcmp(row[1], "d")) {
                     // 移动子文件夹
-                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(dir.length()) + "\" where type=\"d\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\"";
+                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(pdir.length()) + "\" where type=\"d\" and pdir=\"" + dir + "\" and account=\"" + account + "\" and name=\"" + string(row[3]) + "\"";
                     mysql_query(mysql, command.c_str());
                 }
                 else if (!strcmp(row[1], "r")) {
-                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(dir.length()) + "\" where type=\"f\" and pdir=\"" + pdir + "\" and account=\"" + account + "\" and name=\"" + name + "\" and md5=\"" + string(row[4]) + "\"";
+                    command = "update storage set pdir=\"" + dst+string(row[2]).substr(pdir.length()) + "\" where type=\"f\" and pdir=\"" + dir + "\" and account=\"" + account + "\" and name=\"" + string(row[3]) + "\" and md5=\"" + string(row[4]) + "\"";
                     mysql_query(mysql, command.c_str());
                 }
             }
@@ -510,26 +519,25 @@ int cpdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdi
         return FAILED;
     }
     else {
-        // 复制文件夹本身
-        command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + dst + "\",\"" + name + "\",\"\")";
-        mysql_query(mysql, command.c_str());
         // 准备复制文件夹下其他文件/文件夹
         unordered_map<string, int> hash;
         string dir = pdir + name + "/";
-        command = "select * from storage where acount=\"" + account + "\"";
-        mysql_query(mysql, command.c_str());
+        command = "select * from storage where account=\"" + account + "\"";
+        if(mysql_query(mysql, command.c_str())) {
+            cerr << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
+        }
         res = mysql_store_result(mysql);
         while ((row = mysql_fetch_row(res)) != NULL) {
             if (dir == string(row[2]).substr(0, dir.length())) {
                 // 检查是否在该目录下
                 if (!strcmp(row[1], "d")) {
                     // 复制子文件夹
-                    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + dst+string(row[2]).substr(dir.length()) + "\",\"" + string(row[3]) + "\",\"\")";
+                    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + dst+string(row[2]).substr(pdir.length()) + "\",\"" + string(row[3]) + "\",\"\")";
                     mysql_query(mysql, command.c_str());
                 }
                 else if (!strcmp(row[1], "r")) {
                     ++hash[row[4]];
-                    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"f\",\"" + dst+string(row[2]).substr(dir.length()) + "\",\"" + string(row[3]) + "\",\"" + string(row[4]) + "\")";
+                    command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"f\",\"" + dst+string(row[2]).substr(pdir.length()) + "\",\"" + string(row[3]) + "\",\"" + string(row[4]) + "\")";
                     mysql_query(mysql, command.c_str());
                 }
             }
@@ -538,6 +546,9 @@ int cpdir(MYSQL *(&mysql), string &msg, const string &account, const string &pdi
             // 修改计数
             update_link_count(mysql, i.first, -(i.second));
         }
+        // 复制文件夹本身
+        command = "insert into storage(account,type,pdir,name,md5)values(\"" + account + "\",\"d\",\"" + dst + "\",\"" + name + "\",\"\")";
+        mysql_query(mysql, command.c_str());
         logger("用户"+account+"复制文件夹"+pdir+name+"至"+dst);
         msg = "cpdir successfully\n";
         return ACCEPT;
