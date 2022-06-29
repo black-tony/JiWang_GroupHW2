@@ -21,7 +21,7 @@ for ($i = 1; $i < $len; ++$i) {
     }
 }
 $cnt = $upper + $lower + $other + $digit;
-if ($cnt < 3 || $len < 8) {
+if ($cnt < 3 || $len < 12) {
     echo "<script>alert(\"密码设置不合要求!\");location.href='".$_SERVER["HTTP_REFERER"]."';</script>";
     // echo "<script>alert(\"密码设置不合要求!\");histroy.back()</script>";
     exit;
